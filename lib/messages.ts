@@ -119,10 +119,10 @@ export const messages: Record<Locale, Messages> = {
       failedLoad: 'Failed to load services',
       allServices: 'All Services',
       all: 'All',
-      under50: 'Under $50',
-      between50And150: '$50 - $150',
-      between150And500: '$150 - $500',
-      over500: '$500+'
+      under50: 'Under 15 000 FCFA',
+      between50And150: '15 000 - 50 000 FCFA',
+      between150And500: '50 000 - 150 000 FCFA',
+      over500: 'Over 150 000 FCFA'
     },
     service: {
       failedLoad: 'Failed to load service',
@@ -145,7 +145,11 @@ export const messages: Record<Locale, Messages> = {
       qualityDescription: '100% satisfaction or refund',
       verifiedProvider: 'Verified Provider',
       trustedByThousands: 'Trusted by thousands',
-      failedAddCart: 'Failed to add to cart'
+      failedAddCart: 'Failed to add to cart',
+      price: 'Price',
+      express: 'Express',
+      standard: 'Standard',
+      expressExtra: 'Express (+50%)'
     },
     checkout: {
       backToShopping: 'Back to shopping',
@@ -176,7 +180,7 @@ export const messages: Record<Locale, Messages> = {
       city: 'City',
       country: 'Country',
       processing: 'Processing...',
-      payAmount: 'Pay ${amount}',
+      payAmount: 'Pay {amount}',
       demoInfo: 'This is a demo. Use any card details to proceed.',
       orderConfirmed: 'Order Confirmed!',
       orderSuccess: 'Your payment has been processed successfully. You now have access to all the service files.',
@@ -336,10 +340,10 @@ export const messages: Record<Locale, Messages> = {
       failedLoad: 'Impossible de charger les services',
       allServices: 'Tous les services',
       all: 'Tous',
-      under50: 'Moins de 50 $',
-      between50And150: '50 $ - 150 $',
-      between150And500: '150 $ - 500 $',
-      over500: '500 $ et +'
+      under50: 'Moins de 15 000 FCFA',
+      between50And150: '15 000 - 50 000 FCFA',
+      between150And500: '50 000 - 150 000 FCFA',
+      over500: 'Plus de 150 000 FCFA'
     },
     service: {
       failedLoad: 'Impossible de charger le service',
@@ -361,8 +365,12 @@ export const messages: Record<Locale, Messages> = {
       qualityGuaranteed: 'Qualite garantie',
       qualityDescription: '100% satisfait ou rembourse',
       verifiedProvider: 'Prestataire verifie',
-      trustedByThousands: 'Approuve par des milliers de clients',
-      failedAddCart: 'Echec de l ajout au panier'
+      trustedByThousands: 'Approuvé par des milliers de clients',
+      failedAddCart: "Échec de l'ajout au panier",
+      price: 'Prix',
+      express: 'Express',
+      standard: 'Standard',
+      expressExtra: 'Express (+50%)'
     },
     checkout: {
       backToShopping: 'Retour aux achats',
@@ -393,7 +401,7 @@ export const messages: Record<Locale, Messages> = {
       city: 'Ville',
       country: 'Pays',
       processing: 'Traitement...',
-      payAmount: 'Payer ${amount}',
+      payAmount: 'Payer {amount}',
       demoInfo: 'Ceci est une demo. Vous pouvez utiliser n importe quelles informations.',
       orderConfirmed: 'Commande confirmee !',
       orderSuccess: 'Votre paiement a ete traite avec succes. Vous avez maintenant acces aux fichiers du service.',

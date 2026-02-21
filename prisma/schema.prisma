@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,13 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-  MODERATOR
-  SUPER_ADMIN
-}
-
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
@@ -24,41 +14,36 @@ model User {
   name      String
   phone     String?
   country   String?
-  role      Role       @default(USER)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-
-  orders    Order[]
+  role      Role       @default(USER)
   cart      CartItem[]
   favorites Favorite[]
+  orders    Order[]
   reviews   Review[]
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  name        String
-  category    String   // "graphic-design", "templates", "writing", "web-dev"
-  description String
+  id              String     @id @default(cuid())
+  name            String
+  category        String
+  description     String
   longDescription String?
-  price       Float
-  image       String?
-  rating      Float    @default(4.5)
-  reviewCount Int      @default(0)
-  deliveryDays Int    @default(3)
-  provider    String
-  providerImage String?
-  providerRating Float @default(4.5)
-  
-  // What's included
-  included    String? // JSON string array
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  orders      Order[]
-  cartItems   CartItem[]
-  favorites   Favorite[]
-  reviews     Review[]
+  price           Float
+  image           String?
+  rating          Float      @default(4.5)
+  reviewCount     Int        @default(0)
+  deliveryDays    Int        @default(3)
+  provider        String
+  providerImage   String?
+  providerRating  Float      @default(4.5)
+  included        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  cartItems       CartItem[]
+  favorites       Favorite[]
+  orders          Order[]
+  reviews         Review[]
 }
 
 model CartItem {
@@ -67,31 +52,29 @@ model CartItem {
   serviceId String
   quantity  Int      @default(1)
   addedAt   DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, serviceId])
 }
 
 model Order {
-  id          String   @id @default(cuid())
-  userId      String
-  serviceId   String
-  quantity    Int      @default(1)
-  totalPrice  Float
-  status      String   @default("pending") // pending, confirmed, in-progress, completed, cancelled
-  
-  // Delivery info
-  deliveryDate DateTime?
-  notes       String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  review      Review?
+  id             String    @id @default(cuid())
+  userId         String
+  serviceId      String
+  quantity       Int       @default(1)
+  totalPrice     Float
+  status         String    @default("pending")
+  deliveryDate   DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deadlineDate   DateTime?
+  deliverableUrl String?
+  isExpress      Boolean   @default(false)
+  service        Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review         Review?
 }
 
 model Review {
@@ -99,13 +82,12 @@ model Review {
   orderId   String   @unique
   userId    String
   serviceId String
-  rating    Int      // 1-5
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
-
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   service   Service  @relation(fields: [serviceId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Favorite {
@@ -113,9 +95,15 @@ model Favorite {
   userId    String
   serviceId String
   addedAt   DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, serviceId])
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+  SUPER_ADMIN
 }

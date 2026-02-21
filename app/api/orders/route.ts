@@ -1,32 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
-
-function getUserIdFromSession(sessionToken: string): string | null {
-  try {
-    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8')
-    return decoded.split(':')[0]
-  } catch {
-    return null
-  }
-}
+import { getSession } from '@/lib/session'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get('session')?.value
+    const session = await getSession()
+    const userId = session?.id
 
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
-    }
-
-    const userId = getUserIdFromSession(sessionToken)
     if (!userId) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'Not authenticated' },
         { status: 401 }
       )
     }
@@ -52,26 +36,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get('session')?.value
+    const session = await getSession()
+    const userId = session?.id
 
-    if (!sessionToken) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Not authenticated' },
         { status: 401 }
       )
     }
 
-    const userId = getUserIdFromSession(sessionToken)
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Invalid session' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
-    const { items } = body // Array of { serviceId, quantity }
+    const { items, phone, paymentMethod } = body // items: { serviceId, quantity, isExpress }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -91,13 +67,27 @@ export async function POST(request: NextRequest) {
           throw new Error(`Service ${item.serviceId} not found`)
         }
 
+        const isExpress = item.isExpress || false
+        const quantity = item.quantity || 1
+        const basePrice = service.price * quantity
+        const totalPrice = isExpress ? basePrice * 1.5 : basePrice
+
+        // Calculate deadline date
+        const deliveryDays = isExpress
+          ? Math.max(1, Math.floor(service.deliveryDays / 2))
+          : service.deliveryDays
+        const deadlineDate = new Date(Date.now() + deliveryDays * 24 * 60 * 60 * 1000)
+
         const order = await prisma.order.create({
           data: {
             userId,
             serviceId: item.serviceId,
-            quantity: item.quantity || 1,
-            totalPrice: service.price * (item.quantity || 1),
-            deliveryDate: new Date(Date.now() + service.deliveryDays * 24 * 60 * 60 * 1000),
+            quantity,
+            totalPrice,
+            isExpress,
+            deadlineDate,
+            status: 'pending',
+            notes: `Paid via ${paymentMethod || 'Mobile Money'} (${phone || 'No phone provided'})`
           },
           include: { service: true },
         })

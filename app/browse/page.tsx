@@ -9,6 +9,8 @@ import { TiltCard } from '@/components/animations/tilt-card'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { formatPrice } from '@/lib/format'
+import { useSearchParams } from 'next/navigation'
 
 interface Service {
   id: string
@@ -35,17 +37,20 @@ export default function BrowsePage() {
 
   const PRICE_RANGES = [
     { label: t('all'), min: 0, max: Infinity },
-    { label: t('under50'), min: 0, max: 50 },
-    { label: t('between50And150'), min: 50, max: 150 },
-    { label: t('between150And500'), min: 150, max: 500 },
-    { label: t('over500'), min: 500, max: Infinity },
+    { label: 'Sous 15 000 FCFA', min: 0, max: 15000 },
+    { label: '15 000 - 50 000 FCFA', min: 15000, max: 50000 },
+    { label: '50 000 - 150 000 FCFA', min: 50000, max: 150000 },
+    { label: 'Plus de 150 000 FCFA', min: 150000, max: Infinity },
   ]
+
+  const searchParams = useSearchParams()
+  const initialCategory = searchParams.get('category') || 'all'
 
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [selectedPriceRange, setSelectedPriceRange] = useState({ min: 0, max: Infinity })
 
   useEffect(() => {
@@ -175,37 +180,37 @@ export default function BrowsePage() {
                       whileHover={{ y: -6 }}
                     >
                       <Link href={`/service/${service.id}`} className="group block rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-xl hover:shadow-primary/10">
-                      <div className="mb-4 flex h-32 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 text-4xl transition-colors group-hover:from-primary/20 group-hover:to-accent/20">
-                        {service.category === 'graphic-design' && '🎨'}
-                        {service.category === 'templates' && '📄'}
-                        {service.category === 'writing' && '✍️'}
-                        {service.category === 'web-dev' && '💻'}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div>
-                          <Badge variant="outline" className="mb-2 text-xs">{service.category}</Badge>
-                          <h3 className="text-base font-semibold text-foreground transition-colors group-hover:text-primary">{service.name}</h3>
-                          <p className="mt-1 text-sm text-foreground/60">{service.description}</p>
+                        <div className="mb-4 flex h-32 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 text-4xl transition-colors group-hover:from-primary/20 group-hover:to-accent/20">
+                          {service.category === 'graphic-design' && '🎨'}
+                          {service.category === 'templates' && '📄'}
+                          {service.category === 'writing' && '✍️'}
+                          {service.category === 'web-dev' && '💻'}
                         </div>
 
-                        <p className="text-sm text-foreground/70">{t('by')} <span className="font-medium">{service.provider}</span></p>
-
-                        <div className="flex items-center justify-between border-t border-border pt-2">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 fill-accent text-accent" />
-                              <span className="text-sm font-medium text-foreground">{service.rating.toFixed(1)}</span>
-                              <span className="text-xs text-foreground/50">({service.reviewCount})</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-foreground/60">
-                              <Clock className="h-4 w-4" />
-                              <span className="text-sm">{service.deliveryDays}d</span>
-                            </div>
+                        <div className="space-y-3">
+                          <div>
+                            <Badge variant="outline" className="mb-2 text-xs">{service.category}</Badge>
+                            <h3 className="text-base font-semibold text-foreground transition-colors group-hover:text-primary">{service.name}</h3>
+                            <p className="mt-1 text-sm text-foreground/60">{service.description}</p>
                           </div>
-                          <div className="text-lg font-bold text-primary">${service.price}</div>
+
+                          <p className="text-sm text-foreground/70">{t('by')} <span className="font-medium">{service.provider}</span></p>
+
+                          <div className="flex items-center justify-between border-t border-border pt-2">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 fill-accent text-accent" />
+                                <span className="text-sm font-medium text-foreground">{service.rating.toFixed(1)}</span>
+                                <span className="text-xs text-foreground/50">({service.reviewCount})</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-foreground/60">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm">{service.deliveryDays}d</span>
+                              </div>
+                            </div>
+                            <div className="text-lg font-bold text-primary">{formatPrice(service.price)}</div>
+                          </div>
                         </div>
-                      </div>
                       </Link>
                     </motion.div>
                   </TiltCard>

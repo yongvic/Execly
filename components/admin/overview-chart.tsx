@@ -11,18 +11,18 @@ import {
 } from 'recharts'
 
 const data = [
-    { name: 'Jan', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Fév', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Mar', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Avr', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Mai', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Juin', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Juil', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Août', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Sep', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Oct', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Nov', total: Math.floor(Math.random() * 5000) + 1000 },
-    { name: 'Déc', total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: 'Jan', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Fév', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Mar', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Avr', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Mai', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Juin', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Juil', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Août', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Sep', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Oct', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Nov', total: Math.floor(Math.random() * 500000) + 100000 },
+    { name: 'Déc', total: Math.floor(Math.random() * 500000) + 100000 },
 ]
 
 export function Overview() {
@@ -41,7 +41,7 @@ export function Overview() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(value) => `${value / 1000}k`}
                 />
                 <Tooltip
                     cursor={{ fill: 'rgba(0,0,0,0.05)' }}

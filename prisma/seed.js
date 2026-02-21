@@ -43,7 +43,7 @@ async function main() {
       description: 'Custom logo design with unlimited revisions',
       longDescription:
         'Get a professionally designed logo that represents your brand. Includes 5 unique concepts, unlimited revisions until satisfaction, and source files in all formats.',
-      price: 150,
+      price: 100000,
       image:
         'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=500&h=500&fit=crop',
       rating: 4.8,
@@ -67,7 +67,7 @@ async function main() {
       description: 'Modern responsive website templates',
       longDescription:
         'Get access to 50+ modern, responsive website templates built with HTML, CSS, and JavaScript. All templates are fully customizable and ready to use.',
-      price: 49,
+      price: 30000,
       image:
         'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&h=500&fit=crop',
       rating: 4.6,
@@ -91,7 +91,7 @@ async function main() {
       description: 'SEO-optimized blog posts and articles',
       longDescription:
         'Professional writers will create engaging, SEO-optimized content for your blog or website. Includes research, writing, editing, and optimization.',
-      price: 120,
+      price: 60000,
       image:
         'https://images.unsplash.com/photo-1455849318169-8381a305dda7?w=500&h=500&fit=crop',
       rating: 4.9,
@@ -115,7 +115,7 @@ async function main() {
       description: 'Complete WordPress site setup with plugins',
       longDescription:
         'Get a fully functional WordPress website with your choice of premium theme, essential plugins, and basic customization.',
-      price: 250,
+      price: 150000,
       image:
         'https://images.unsplash.com/photo-1460925895917-adf4e565db11?w=500&h=500&fit=crop',
       rating: 4.7,
@@ -140,7 +140,7 @@ async function main() {
       description: 'Unique business card design',
       longDescription:
         'Professional business card design with multiple concepts and print-ready files.',
-      price: 50,
+      price: 35000,
       image:
         'https://images.unsplash.com/photo-1611605698335-8be5fcf97f4e?w=500&h=500&fit=crop',
       rating: 4.5,
@@ -163,7 +163,7 @@ async function main() {
       description: '30 responsive email templates',
       longDescription:
         'Professional email templates for marketing campaigns, newsletters, and transactional emails.',
-      price: 35,
+      price: 50000,
       image:
         'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop',
       rating: 4.4,
@@ -186,7 +186,7 @@ async function main() {
       description: 'Professional resume and CV writing',
       longDescription:
         'Get a professionally written resume optimized for ATS systems. Includes cover letter and LinkedIn profile optimization.',
-      price: 80,
+      price: 45000,
       image:
         'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=500&fit=crop',
       rating: 4.8,
@@ -210,7 +210,7 @@ async function main() {
       description: 'Custom mobile app development',
       longDescription:
         'Build a custom mobile application for iOS and Android with modern technologies and best practices.',
-      price: 1500,
+      price: 850000,
       image:
         'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&h=500&fit=crop',
       rating: 4.9,
@@ -249,7 +249,7 @@ async function main() {
       userId: user1.id,
       serviceId: (await prisma.service.findFirst({ where: { category: 'graphic-design' } })).id,
       quantity: 1,
-      totalPrice: 150,
+      totalPrice: 100000,
       status: 'completed',
     },
   });

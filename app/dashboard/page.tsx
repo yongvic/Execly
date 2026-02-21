@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/lib/auth-context'
+import { formatPrice } from '@/lib/format'
 
 interface Order {
   id: string
@@ -19,6 +20,8 @@ interface Order {
   totalPrice: number
   createdAt: string
   deliveryDate?: string
+  deadlineDate?: string
+  isExpress?: boolean
 }
 
 interface Favorite {
@@ -146,7 +149,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="mb-1 text-sm text-foreground/60">{t('totalSpent')}</p>
-                <p className="text-2xl font-bold text-foreground">${orders.reduce((sum, order) => sum + order.totalPrice, 0)}</p>
+                <p className="text-2xl font-bold text-foreground">{formatPrice(orders.reduce((sum, order) => sum + order.totalPrice, 0))}</p>
               </div>
               <ShoppingBag className="h-8 w-8 text-accent/50" />
             </div>
@@ -197,11 +200,16 @@ export default function DashboardPage() {
                               <p className="mb-3 text-sm text-foreground/60">{new Date(order.createdAt).toLocaleDateString()} • {order.service.category}</p>
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className={STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800'}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</Badge>
-                                {order.deliveryDate && <span className="text-xs text-foreground/60">{t('delivery', { date: new Date(order.deliveryDate).toLocaleDateString() })}</span>}
+                                {(order.deadlineDate || order.deliveryDate) && (
+                                  <span className="text-xs text-foreground/60">
+                                    {t('delivery', { date: new Date(order.deadlineDate || order.deliveryDate!).toLocaleDateString() })}
+                                    {order.isExpress && <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800 border-amber-200">Express</Badge>}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="mb-3 text-lg font-bold text-primary">${order.totalPrice}</p>
+                              <p className="mb-3 text-lg font-bold text-primary">{formatPrice(order.totalPrice)}</p>
                               {order.status === 'completed' && <Button size="sm" variant="outline" className="gap-2"><Download className="h-4 w-4" />{t('download')}</Button>}
                             </div>
                           </div>
@@ -245,7 +253,7 @@ export default function DashboardPage() {
                           </div>
                           <h3 className="mb-1 line-clamp-2 font-semibold text-foreground">{fav.service.name}</h3>
                           <div className="mt-3 flex items-center justify-between">
-                            <span className="font-bold text-primary">${fav.service.price}</span>
+                            <span className="font-bold text-primary">{formatPrice(fav.service.price)}</span>
                             <Link href={`/service/${fav.service.id}`}><Button size="sm" variant="outline">{t('view')}</Button></Link>
                           </div>
                         </div>

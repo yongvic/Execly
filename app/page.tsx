@@ -186,17 +186,17 @@ export default function LandingPage() {
             {services.map((service, idx) => (
               <TiltCard key={service.title}>
                 <motion.div
-                key={service.title}
-                className="rounded-xl border border-border bg-card p-6"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.08, duration: 0.45 }}
-                whileHover={{ y: -8, scale: 1.02 }}
-              >
-                <div className="mb-3 text-3xl">{service.icon}</div>
-                <h3 className="mb-2 font-semibold text-foreground">{service.title}</h3>
-                <p className="text-sm text-foreground/60">{service.desc}</p>
+                  key={service.title}
+                  className="rounded-xl border border-border bg-card p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.08, duration: 0.45 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                >
+                  <div className="mb-3 text-3xl">{service.icon}</div>
+                  <h3 className="mb-2 font-semibold text-foreground">{service.title}</h3>
+                  <p className="text-sm text-foreground/60">{service.desc}</p>
                 </motion.div>
               </TiltCard>
             ))}
@@ -272,25 +272,25 @@ export default function LandingPage() {
             <div>
               <h4 className="mb-4 font-semibold text-foreground">{t('services')}</h4>
               <ul className="space-y-2 text-sm text-foreground/60">
-                <li><Link href="#" className="hover:text-foreground">{t('graphicDesign')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('templates')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('writing')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('webDev')}</Link></li>
+                <li><Link href="/browse?category=graphic-design" className="hover:text-foreground">{t('graphicDesign')}</Link></li>
+                <li><Link href="/browse?category=templates" className="hover:text-foreground">{t('templates')}</Link></li>
+                <li><Link href="/browse?category=writing" className="hover:text-foreground">{t('writing')}</Link></li>
+                <li><Link href="/browse?category=web-dev" className="hover:text-foreground">{t('webDev')}</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 font-semibold text-foreground">{t('company')}</h4>
               <ul className="space-y-2 text-sm text-foreground/60">
-                <li><Link href="#" className="hover:text-foreground">{t('about')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('contact')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('blog')}</Link></li>
+                <li><Link href="/" className="hover:text-foreground">{t('about')}</Link></li>
+                <li><Link href="/" className="hover:text-foreground">{t('contact')}</Link></li>
+                <li><Link href="/" className="hover:text-foreground">{t('blog')}</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="mb-4 font-semibold text-foreground">{t('legal')}</h4>
               <ul className="space-y-2 text-sm text-foreground/60">
-                <li><Link href="#" className="hover:text-foreground">{t('privacy')}</Link></li>
-                <li><Link href="#" className="hover:text-foreground">{t('terms')}</Link></li>
+                <li><Link href="/" className="hover:text-foreground">{t('privacy')}</Link></li>
+                <li><Link href="/" className="hover:text-foreground">{t('terms')}</Link></li>
               </ul>
             </div>
           </div>

@@ -8,8 +8,10 @@ import { AlertCircle, CheckCircle2, Clock, Heart, Share2, Star } from 'lucide-re
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/lib/auth-context'
+import { formatPrice } from '@/lib/format'
 
 interface Service {
   id: string
@@ -45,6 +47,7 @@ export default function ServiceDetailPage() {
   const [error, setError] = useState('')
   const [isFavorited, setIsFavorited] = useState(false)
   const [isAddingToCart, setIsAddingToCart] = useState(false)
+  const [isExpress, setIsExpress] = useState(false)
 
   useEffect(() => {
     const fetchService = async () => {
@@ -79,7 +82,7 @@ export default function ServiceDetailPage() {
       })
 
       if (!response.ok) throw new Error(t('failedAddCart'))
-      router.push('/checkout')
+      router.push(`/checkout?express=${isExpress}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('failedAddCart'))
     } finally {
@@ -258,9 +261,44 @@ export default function ServiceDetailPage() {
 
           <motion.div className="lg:col-span-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="sticky top-20 space-y-6 rounded-lg border border-border bg-card p-6">
-              <div>
-                <div className="mb-2 text-4xl font-bold text-foreground">${service.price}</div>
-                <p className="text-sm text-foreground/60">{t('deliveryInDays', { days: service.deliveryDays })}</p>
+              <div className="space-y-4">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-foreground/60">{t('price')}</div>
+                    <div className="text-4xl font-bold text-primary">
+                      {formatPrice(isExpress ? service.price * 1.5 : service.price)}
+                    </div>
+                  </div>
+                  {isExpress && (
+                    <Badge className="mb-2 bg-accent text-accent-foreground">{t('express')}</Badge>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-1">
+                  <button
+                    onClick={() => setIsExpress(false)}
+                    className={`rounded-md py-2 text-xs font-semibold transition-all ${!isExpress ? 'bg-background text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground'}`}
+                  >
+                    {t('standard')}
+                  </button>
+                  <button
+                    onClick={() => setIsExpress(true)}
+                    className={`rounded-md py-2 text-xs font-semibold transition-all ${isExpress ? 'bg-accent text-accent-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground'}`}
+                  >
+                    {t('expressExtra')}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-foreground/60">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {t('deliveryInDays', {
+                      days: isExpress
+                        ? Math.max(1, Math.floor(service.deliveryDays / 2))
+                        : service.deliveryDays
+                    })}
+                  </span>
+                </div>
               </div>
 
               <Button onClick={handleAddToCart} disabled={isAddingToCart} className="w-full" size="lg">

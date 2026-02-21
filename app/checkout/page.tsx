@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { AlertCircle, Check, ChevronLeft, Lock, Trash2 } from 'lucide-react'
+import { AlertCircle, Check, ChevronLeft, Trash2 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/lib/auth-context'
+import { formatPrice } from '@/lib/format'
 
 interface CartItem {
   id: string
@@ -50,8 +51,10 @@ function CheckoutStepper({
 
 export default function CheckoutPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const t = useTranslations('checkout')
+  const isExpressParam = searchParams.get('express') === 'true'
 
   const [activeStep, setActiveStep] = useState<'cart' | 'payment' | 'confirmation'>('cart')
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -60,11 +63,12 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [promoCode, setPromoCode] = useState('')
   const [discount, setDiscount] = useState(0)
-  const [formData, setFormData] = useState({ cardName: '', cardNumber: '', expiryDate: '', cvc: '', billingAddress: '', city: '', country: '' })
+  const [paymentMethod, setPaymentMethod] = useState<'flooz' | 'tmoney'>('flooz')
+  const [formData, setFormData] = useState({ phone: '', name: '' })
 
   useEffect(() => {
-    if (!user) router.push('/login')
-  }, [user, router])
+    if (!user && !loading) router.push('/login')
+  }, [user, router, loading])
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -84,10 +88,12 @@ export default function CheckoutPage() {
     if (user) fetchCart()
   }, [user, t])
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.service.price * item.quantity, 0)
+  const subtotal = cartItems.reduce((sum, item) => {
+    const basePrice = item.service.price * item.quantity;
+    return sum + (isExpressParam ? basePrice * 1.5 : basePrice);
+  }, 0)
   const discountAmount = (subtotal * discount) / 100
-  const tax = (subtotal - discountAmount) * 0.1
-  const total = subtotal - discountAmount + tax
+  const total = subtotal - discountAmount
 
   const handleRemoveItem = async (cartItemId: string) => {
     try {
@@ -121,15 +127,20 @@ export default function CheckoutPage() {
     setIsProcessing(true)
 
     try {
-      if (!formData.cardName || !formData.cardNumber || !formData.expiryDate || !formData.cvc) {
-        throw new Error(t('fillPayment'))
+      if (!formData.phone) {
+        throw new Error("Veuillez entrer votre numéro de téléphone pour le paiement.")
       }
 
-      const items = cartItems.map((item) => ({ serviceId: item.service.id, quantity: item.quantity }))
+      const items = cartItems.map((item) => ({
+        serviceId: item.service.id,
+        quantity: item.quantity,
+        isExpress: isExpressParam
+      }))
+
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, paymentMethod, phone: formData.phone }),
       })
 
       if (!response.ok) throw new Error(t('failedOrder'))
@@ -137,13 +148,13 @@ export default function CheckoutPage() {
       setCartItems([])
       setActiveStep('confirmation')
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('paymentFailed'))
+      setError(err instanceof Error ? err.message : (err as any).message || t('paymentFailed'))
     } finally {
       setIsProcessing(false)
     }
   }
 
-  if (!user) return null
+  if (!user && !loading) return null
 
   if (activeStep === 'cart') {
     return (
@@ -198,7 +209,9 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="mb-3 font-bold text-primary">${item.service.price * item.quantity}</p>
+                        <p className="mb-3 font-bold text-primary">
+                          {formatPrice((isExpressParam ? item.service.price * 1.5 : item.service.price) * item.quantity)}
+                        </p>
                         <button onClick={() => handleRemoveItem(item.id)} className="text-foreground/40 transition-colors hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
@@ -212,17 +225,16 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-semibold text-foreground">{t('orderSummary')}</h2>
 
                 <div className="space-y-3 border-b border-border pb-4">
-                  <div className="flex justify-between text-foreground/70"><span>{t('subtotal')}</span><span>${subtotal.toFixed(2)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-${discountAmount.toFixed(2)}</span></div>}
-                  <div className="flex justify-between text-foreground/70"><span>{t('tax')}</span><span>${tax.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-foreground/70"><span>{t('subtotal')}</span><span>{formatPrice(subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-{formatPrice(discountAmount)}</span></div>}
                 </div>
 
-                <div className="flex justify-between text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">${total.toFixed(2)}</span></div>
+                <div className="flex justify-between text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">{formatPrice(total)}</span></div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">{t('promoCode')}</label>
                   <div className="flex gap-2">
-                    <Input placeholder={t('enterCode')} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} className="border-border bg-muted" />
+                    <Input placeholder={t('enterCode')} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} name="promo" className="border-border bg-muted" />
                     <Button variant="outline" onClick={handleApplyPromo} className="px-3">{t('apply')}</Button>
                   </div>
                 </div>
@@ -260,62 +272,58 @@ export default function CheckoutPage() {
           {error && <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><p className="text-sm text-red-600">{error}</p></div>}
 
           <form onSubmit={handlePayment} className="space-y-6">
-            <div className="space-y-4 rounded-lg border border-border bg-card p-6">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground"><Lock className="h-4 w-4" />{t('cardInfo')}</h2>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">{t('cardName')}</label>
-                <Input name="cardName" placeholder="John Doe" value={formData.cardName} onChange={handleFormChange} required className="border-border bg-muted" />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">{t('cardNumber')}</label>
-                <Input name="cardNumber" placeholder="1234 5678 9012 3456" value={formData.cardNumber} onChange={handleFormChange} required className="border-border bg-muted" />
-              </div>
+            <div className="space-y-6 rounded-lg border border-border bg-card p-6">
+              <h2 className="flex items-center gap-2 font-semibold text-foreground">Sélectionnez votre moyen de paiement</h2>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">{t('expiry')}</label>
-                  <Input name="expiryDate" placeholder="MM/YY" value={formData.expiryDate} onChange={handleFormChange} required className="border-border bg-muted" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">{t('cvc')}</label>
-                  <Input name="cvc" placeholder="123" value={formData.cvc} onChange={handleFormChange} required className="border-border bg-muted" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('flooz')}
+                  className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-4 transition-all ${paymentMethod === 'flooz' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFD700] text-xl font-bold text-black italic">F</div>
+                  <span className="text-sm font-bold">Flooz</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('tmoney')}
+                  className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-4 transition-all ${paymentMethod === 'tmoney' ? 'border-primary bg-primary/5' : 'border-border'}`}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EE1C25] text-xl font-bold text-white italic">T</div>
+                  <span className="text-sm font-bold">TMoney</span>
+                </button>
               </div>
-            </div>
 
-            <div className="space-y-4 rounded-lg border border-border bg-card p-6">
-              <h2 className="font-semibold text-foreground">{t('billingAddress')}</h2>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-foreground">{t('address')}</label>
-                <Input name="billingAddress" placeholder="123 Main St" value={formData.billingAddress} onChange={handleFormChange} className="border-border bg-muted" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4 pt-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">{t('city')}</label>
-                  <Input name="city" placeholder="Lagos" value={formData.city} onChange={handleFormChange} className="border-border bg-muted" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">{t('country')}</label>
-                  <Input name="country" placeholder="Nigeria" value={formData.country} onChange={handleFormChange} className="border-border bg-muted" />
+                  <label className="mb-2 block text-sm font-medium text-foreground">Numéro de téléphone (Mobile Money)</label>
+                  <Input
+                    name="phone"
+                    placeholder="ex: 90 00 00 00"
+                    value={formData.phone}
+                    onChange={handleFormChange}
+                    required
+                    className="border-border bg-muted text-lg font-bold tracking-widest"
+                  />
+                  <p className="mt-2 text-xs text-foreground/50">Vous recevrez une demande de confirmation USSD sur ce numéro après avoir cliqué sur payer.</p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-lg border border-border bg-card/50 p-6">
               <div className="mb-4 space-y-2">
-                <div className="flex justify-between"><span className="text-foreground/70">{t('subtotal')}</span><span>${subtotal.toFixed(2)}</span></div>
-                {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-${discountAmount.toFixed(2)}</span></div>}
-                <div className="flex justify-between"><span className="text-foreground/70">{t('tax')}</span><span>${tax.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-foreground/70">{t('subtotal')}</span><span>{formatPrice(subtotal)}</span></div>
+                {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-{formatPrice(discountAmount)}</span></div>}
               </div>
-              <div className="flex justify-between border-t border-border pt-4 text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">${total.toFixed(2)}</span></div>
+              <div className="flex justify-between border-t border-border pt-4 text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">{formatPrice(total)}</span></div>
             </div>
 
-            <Button type="submit" disabled={isProcessing} className="w-full" size="lg">{isProcessing ? t('processing') : t('payAmount', { amount: total.toFixed(2) })}</Button>
+            <Button type="submit" disabled={isProcessing} className="w-full" size="lg">
+              {isProcessing ? 'Initialisation USSD...' : `Payer ${formatPrice(total)} par ${paymentMethod === 'flooz' ? 'Flooz' : 'TMoney'}`}
+            </Button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-foreground/50">{t('demoInfo')}</p>
+          <p className="mt-4 text-center text-xs text-foreground/50 italic">Mentorly sécurise vos transactions via les réseaux mobiles locaux.</p>
         </main>
       </div>
     )
@@ -334,7 +342,7 @@ export default function CheckoutPage() {
         <p className="mb-6 text-foreground/60">{t('orderSuccess')}</p>
 
         <div className="mb-8 space-y-4 rounded-lg border border-border bg-card p-4">
-          <div><p className="text-xs text-foreground/60">{t('orderTotal')}</p><p className="text-2xl font-bold text-primary">${total.toFixed(2)}</p></div>
+          <div><p className="text-xs text-foreground/60">{t('orderTotal')}</p><p className="text-2xl font-bold text-primary">{formatPrice(total)}</p></div>
         </div>
 
         <div className="space-y-3">

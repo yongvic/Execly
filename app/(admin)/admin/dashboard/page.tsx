@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Overview } from '../../../../components/admin/overview-chart'
 import { RecentActivity } from '../../../../components/admin/recent-activity'
 import { Users, CreditCard, Activity, Package } from 'lucide-react'
+import { formatPrice } from '@/lib/format'
 
 export default function AdminDashboard() {
     return (
@@ -35,7 +36,7 @@ export default function AdminDashboard() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$45,231.89</div>
+                        <div className="text-2xl font-bold">{formatPrice(45231.89)}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             <span className="text-emerald-500 font-medium">+15%</span> depuis le mois dernier
                         </p>

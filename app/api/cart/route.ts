@@ -1,32 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { getSession } from '@/lib/session'
 
-function getUserIdFromSession(sessionToken: string): string | null {
-  try {
-    const decoded = Buffer.from(sessionToken, 'base64').toString('utf-8')
-    return decoded.split(':')[0]
-  } catch {
-    return null
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get('session')?.value
+    const session = await getSession()
+    const userId = session?.id
 
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
-    }
-
-    const userId = getUserIdFromSession(sessionToken)
     if (!userId) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'Not authenticated' },
         { status: 401 }
       )
     }
@@ -60,20 +45,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const sessionToken = cookieStore.get('session')?.value
+    const session = await getSession()
+    const userId = session?.id
 
-    if (!sessionToken) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      )
-    }
-
-    const userId = getUserIdFromSession(sessionToken)
     if (!userId) {
       return NextResponse.json(
-        { error: 'Invalid session' },
+        { error: 'Not authenticated' },
         { status: 401 }
       )
     }

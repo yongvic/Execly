@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Search, Filter, Eye, Edit, Trash2, CheckCircle2 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
+import { formatPrice } from '@/lib/format'
 
 export default async function AdminServicesPage() {
     const services = await prisma.service.findMany({
@@ -101,7 +102,7 @@ export default async function AdminServicesPage() {
                                         </td>
                                         <td className="p-4 align-middle">
                                             <div className="flex flex-col">
-                                                <span className="font-semibold text-emerald-600">${service.price.toFixed(2)}</span>
+                                                <span className="font-semibold text-emerald-600">{formatPrice(service.price)}</span>
                                                 <span className="text-xs text-muted-foreground">{service._count.orders} vente(s)</span>
                                             </div>
                                         </td>

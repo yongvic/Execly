@@ -2,6 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { BarChart3, TrendingUp, Users, Activity, ExternalLink } from 'lucide-react'
 import { Overview } from '@/components/admin/overview-chart'
+import { formatPrice } from '@/lib/format'
 
 export default function AdminStatsPage() {
     return (
@@ -88,7 +89,7 @@ export default function AdminStatsPage() {
                                         <p className="text-xs text-muted-foreground">Fournisseur {item}</p>
                                     </div>
                                     <div className="text-sm font-medium">
-                                        ${(Math.random() * 5000 + 100).toFixed(2)}
+                                        {formatPrice(Math.random() * 500000 + 10000)}
                                     </div>
                                 </div>
                             ))}
