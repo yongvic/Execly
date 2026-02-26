@@ -1,0 +1,22 @@
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="300" height="200" fill="url(#grad6)"/>
+  <rect x="60" y="50" width="180" height="100" fill="white" rx="5" opacity="0.95"/>
+  <polyline points="80,120 100,100 120,110 140,80 160,90 180,70 200,85 220,75" 
+            fill="none" stroke="#667eea" stroke-width="3"/>
+  <circle cx="80" cy="120" r="4" fill="#667eea"/>
+  <circle cx="100" cy="100" r="4" fill="#667eea"/>
+  <circle cx="120" cy="110" r="4" fill="#667eea"/>
+  <circle cx="140" cy="80" r="4" fill="#667eea"/>
+  <circle cx="160" cy="90" r="4" fill="#667eea"/>
+  <circle cx="180" cy="70" r="4" fill="#667eea"/>
+  <circle cx="200" cy="85" r="4" fill="#667eea"/>
+  <circle cx="220" cy="75" r="4" fill="#667eea"/>
+  <rect x="70" y="130" width="160" height="2" fill="#ddd"/>
+  <text x="150" y="180" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Investment Portfolio</text>
+</svg>

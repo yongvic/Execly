@@ -18,6 +18,7 @@ interface AuthContextType {
   logout: () => Promise<void>
   register: (email: string, password: string, name: string) => Promise<void>
   refreshUser: () => Promise<void>
+  redirectToBrowse?: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -62,6 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json()
     setUser(data.user)
+    
+    // Redirect to browse page after successful login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/browse'
+    }
   }
 
   const logout = async () => {

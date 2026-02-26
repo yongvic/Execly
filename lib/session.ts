@@ -1,7 +1,15 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
-const secretKey = process.env.AUTH_SECRET || 'fallback_secret_for_development_only_123'
+// Use environment variable with fallback for development only
+const secretKey = process.env.AUTH_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('AUTH_SECRET environment variable is required in production')
+  }
+  console.warn('⚠️  Using fallback secret for development only. Set AUTH_SECRET in production!')
+  return 'development_fallback_secret_change_in_production_123456789'
+})()
+
 const key = new TextEncoder().encode(secretKey)
 
 export async function encrypt(payload: any) {
@@ -19,6 +27,7 @@ export async function decrypt(input: string): Promise<any> {
         })
         return payload
     } catch (error) {
+        console.warn('JWT decryption failed:', error instanceof Error ? error.message : 'Unknown error')
         return null
     }
 }
@@ -34,7 +43,7 @@ export async function updateSession(request: any) {
     const session = request.cookies.get('session')?.value
     if (!session) return null
 
-    // Refresh the session so it doesn't expire
+    // Refresh session so it doesn't expire
     const parsed = await decrypt(session)
     if (!parsed) return null
 

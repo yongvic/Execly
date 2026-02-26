@@ -6,10 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "next lint",
     "postinstall": "prisma generate",
-    "db:setup": "node scripts/auto-setup.mjs",
-    "db:seed": "node prisma/seed.js"
+    "db:setup": "node scripts/setup-database.js",
+    "db:push": "prisma db push --accept-data-loss",
+    "db:generate": "prisma generate",
+    "db:seed": "node scripts/seed.js",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

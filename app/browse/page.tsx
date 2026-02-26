@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AlertCircle, Clock, Search, Star } from 'lucide-react'
@@ -24,7 +24,7 @@ interface Service {
   deliveryDays: number
 }
 
-export default function BrowsePage() {
+function BrowseContent() {
   const t = useTranslations('browse')
 
   const CATEGORIES = [
@@ -37,10 +37,10 @@ export default function BrowsePage() {
 
   const PRICE_RANGES = [
     { label: t('all'), min: 0, max: Infinity },
-    { label: 'Sous 15 000 FCFA', min: 0, max: 15000 },
-    { label: '15 000 - 50 000 FCFA', min: 15000, max: 50000 },
-    { label: '50 000 - 150 000 FCFA', min: 50000, max: 150000 },
-    { label: 'Plus de 150 000 FCFA', min: 150000, max: Infinity },
+    { label: t('under15k'), min: 0, max: 15000 },
+    { label: t('between15kAnd50k'), min: 15000, max: 50000 },
+    { label: t('between50kAnd150k'), min: 50000, max: 150000 },
+    { label: t('over150k'), min: 150000, max: Infinity },
   ]
 
   const searchParams = useSearchParams()
@@ -221,5 +221,13 @@ export default function BrowsePage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <BrowseContent />
+    </Suspense>
   )
 }

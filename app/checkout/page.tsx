@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -49,7 +49,7 @@ function CheckoutStepper({
   )
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
@@ -128,7 +128,7 @@ export default function CheckoutPage() {
 
     try {
       if (!formData.phone) {
-        throw new Error("Veuillez entrer votre numéro de téléphone pour le paiement.")
+        throw new Error(t('enterPhoneNumber'))
       }
 
       const items = cartItems.map((item) => ({
@@ -273,7 +273,7 @@ export default function CheckoutPage() {
 
           <form onSubmit={handlePayment} className="space-y-6">
             <div className="space-y-6 rounded-lg border border-border bg-card p-6">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground">Sélectionnez votre moyen de paiement</h2>
+              <h2 className="flex items-center gap-2 font-semibold text-foreground">{t('selectPaymentMethod')}</h2>
 
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -296,16 +296,16 @@ export default function CheckoutPage() {
 
               <div className="space-y-4 pt-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">Numéro de téléphone (Mobile Money)</label>
+                  <label className="mb-2 block text-sm font-medium text-foreground">{t('phoneNumber')}</label>
                   <Input
                     name="phone"
-                    placeholder="ex: 90 00 00 00"
+                    placeholder={t('phonePlaceholder')}
                     value={formData.phone}
                     onChange={handleFormChange}
                     required
                     className="border-border bg-muted text-lg font-bold tracking-widest"
                   />
-                  <p className="mt-2 text-xs text-foreground/50">Vous recevrez une demande de confirmation USSD sur ce numéro après avoir cliqué sur payer.</p>
+                  <p className="mt-2 text-xs text-foreground/50">{t('ussdNote')}</p>
                 </div>
               </div>
             </div>
@@ -319,11 +319,11 @@ export default function CheckoutPage() {
             </div>
 
             <Button type="submit" disabled={isProcessing} className="w-full" size="lg">
-              {isProcessing ? 'Initialisation USSD...' : `Payer ${formatPrice(total)} par ${paymentMethod === 'flooz' ? 'Flooz' : 'TMoney'}`}
+              {isProcessing ? t('initializingUssd') : t('payWithMethod', { amount: formatPrice(total), method: paymentMethod === 'flooz' ? 'Flooz' : 'TMoney' })}
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-xs text-foreground/50 italic">Mentorly sécurise vos transactions via les réseaux mobiles locaux.</p>
+          <p className="mt-4 text-center text-xs text-foreground/50 italic">{t('secureTransactions')}</p>
         </main>
       </div>
     )
@@ -353,5 +353,13 @@ export default function CheckoutPage() {
         <p className="mt-6 text-xs text-foreground/50">{t('orderEmailHint')}</p>
       </motion.div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background px-4">Loading...</div>}>
+      <CheckoutContent />
+    </Suspense>
   )
 }

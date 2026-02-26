@@ -154,8 +154,8 @@ export default function SignupPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" type="button" className="w-full">Google</Button>
-            <Button variant="outline" type="button" className="w-full">Facebook</Button>
+            <Button variant="outline" type="button" className="w-full">{t('google')}</Button>
+            <Button variant="outline" type="button" className="w-full">{t('facebook')}</Button>
           </div>
         </div>
       </motion.div>

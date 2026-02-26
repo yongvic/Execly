@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { decrypt } from '@/lib/session'
 
-// Specify which routes the middleware should apply to
+// Specify which routes middleware should apply to
 export const config = {
     matcher: ['/admin/:path*'],
 }
@@ -15,7 +15,6 @@ export async function middleware(request: NextRequest) {
         const sessionToken = request.cookies.get('session')?.value
 
         if (!sessionToken) {
-            // Redirect to login if no session exists
             return NextResponse.redirect(new URL('/login', request.url))
         }
 
@@ -27,24 +26,25 @@ export async function middleware(request: NextRequest) {
                 return NextResponse.redirect(new URL('/login', request.url))
             }
 
-            // Check if the user role is authorized to access the admin area
-            // Allowed roles: ADMIN, SUPER_ADMIN, MODERATOR
-            const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'MODERATOR', 'admin', 'super_admin', 'moderator']
+            // Normalize role to uppercase for comparison
+            const userRole = sessionData.role.toString().toUpperCase()
+            
+            // Check if user role is authorized to access admin area
+            const allowedRoles = ['ADMIN', 'SUPER_ADMIN', 'MODERATOR']
 
-            if (!allowedRoles.includes(sessionData.role.toString().toUpperCase()) &&
-                !allowedRoles.includes(sessionData.role.toString().toLowerCase())) {
-                // Rediriger ou renvoyer une erreur 403 Forbidden
-                return NextResponse.redirect(new URL('/dashboard', request.url)) // Or to an Unauthorized page
+            if (!allowedRoles.includes(userRole)) {
+                return NextResponse.redirect(new URL('/dashboard', request.url))
             }
 
-            // Optionnel : Actualiser le token JWT en cas d'utilisation active pour étendre la durée de vie
-            // const res = NextResponse.next()
-            // res.cookies.set('session', ...)
+            // Add security headers
+            const response = NextResponse.next()
+            response.headers.set('X-Admin-Access', 'granted')
+            response.headers.set('X-User-Role', userRole)
 
-            return NextResponse.next()
+            return response
 
         } catch (error) {
-            // En cas d'erreur de décryptage du JWT (modifié manuellement, corrompu...)
+            console.warn('Admin middleware error:', error instanceof Error ? error.message : 'Unknown error')
             return NextResponse.redirect(new URL('/login', request.url))
         }
     }

@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-motion'
-import { ArrowRight, Check, Star, TrendingUp, Users, Zap } from 'lucide-react'
+import { ArrowRight, Check, Star, TrendingUp, Users, Zap, User } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { TiltCard } from '@/components/animations/tilt-card'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { useAuth } from '@/lib/auth-context'
 
 const sectionReveal = {
   hidden: { opacity: 0, y: 40 },
@@ -16,6 +17,7 @@ const sectionReveal = {
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user } = useAuth()
   const t = useTranslations('landing')
   const heroX = useMotionValue(0)
   const heroY = useMotionValue(0)
@@ -37,10 +39,14 @@ export default function LandingPage() {
   }
 
   const services = [
-    { title: t('graphicDesign'), desc: t('graphicDesignDesc'), icon: '🎨' },
-    { title: t('templates'), desc: t('templatesDesc'), icon: '📄' },
-    { title: t('writing'), desc: t('writingDesc'), icon: '✍️' },
-    { title: t('webDev'), desc: t('webDevDesc'), icon: '💻' },
+    { title: t('graphicDesign'), desc: t('graphicDesignDesc'), icon: '🎨', image: '/images/services/graphic-design.svg' },
+    { title: t('templates'), desc: t('templatesDesc'), icon: '📄', image: '/images/services/templates.svg' },
+    { title: t('writing'), desc: t('writingDesc'), icon: '✍️', image: '/images/services/writing.svg' },
+    { title: t('webDev'), desc: t('webDevDesc'), icon: '💻', image: '/images/services/web-dev.svg' },
+    { title: t('taxOptimization'), desc: t('taxOptimizationDesc'), icon: '📊', image: '/images/services/tax-optimization.svg' },
+    { title: t('investmentPortfolio'), desc: t('investmentPortfolioDesc'), icon: '📈', image: '/images/services/investment-portfolio.svg' },
+    { title: t('retirementPlanning'), desc: t('retirementPlanningDesc'), icon: '🏖️', image: '/images/services/retirement-planning.svg' },
+    { title: t('estatePlanning'), desc: t('estatePlanningDesc'), icon: '🏛️', image: '/images/services/estate-planning.svg' },
   ]
 
   const steps = [
@@ -96,12 +102,23 @@ export default function LandingPage() {
 
           <div className="hidden items-center gap-3 md:flex">
             <LanguageSwitcher />
-            <Link href="/login">
-              <Button variant="ghost" size="sm">{t('signIn')}</Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">{t('getStarted')}</Button>
-            </Link>
+            {user ? (
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  {user.name}
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">{t('signIn')}</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">{t('getStarted')}</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 md:hidden">
@@ -119,6 +136,17 @@ export default function LandingPage() {
               <Link href="#services" className="text-sm text-foreground/80">{t('services')}</Link>
               <Link href="#how-it-works" className="text-sm text-foreground/80">{t('howItWorks')}</Link>
               <Link href="#features" className="text-sm text-foreground/80">{t('features')}</Link>
+              {user ? (
+                <Link href="/dashboard" className="text-sm text-foreground/80">
+                  <User className="inline h-4 w-4 mr-1" />
+                  {user.name}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="text-sm text-foreground/80">{t('signIn')}</Link>
+                  <Link href="/signup" className="text-sm text-foreground/80">{t('getStarted')}</Link>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -187,16 +215,27 @@ export default function LandingPage() {
               <TiltCard key={service.title}>
                 <motion.div
                   key={service.title}
-                  className="rounded-xl border border-border bg-card p-6"
+                  className={`rounded-xl border bg-card p-6 transition-all duration-300 ${
+                    idx === 4 
+                      ? 'border-green-500 bg-green-50 shadow-lg shadow-green-500/20 scale-105' 
+                      : 'border-border hover:border-primary/50 hover:shadow-lg'
+                  }`}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.08, duration: 0.45 }}
-                  whileHover={{ y: -8, scale: 1.02 }}
+                  whileHover={{ y: -8, scale: idx === 4 ? 1.02 : 1.02 }}
                 >
-                  <div className="mb-3 text-3xl">{service.icon}</div>
-                  <h3 className="mb-2 font-semibold text-foreground">{service.title}</h3>
-                  <p className="text-sm text-foreground/60">{service.desc}</p>
+                  <div className="mb-4 text-3xl">{service.icon}</div>
+                  <h3 className={`mb-2 font-semibold ${idx === 4 ? 'text-green-800' : 'text-foreground'}`}>{service.title}</h3>
+                  <p className={`text-sm ${idx === 4 ? 'text-green-600' : 'text-foreground/60'}`}>{service.desc}</p>
+                  <div className="mt-4 h-24 overflow-hidden rounded-lg">
+                    <img 
+                      src={service.image} 
+                      alt={service.title}
+                      className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+                    />
+                  </div>
                 </motion.div>
               </TiltCard>
             ))}

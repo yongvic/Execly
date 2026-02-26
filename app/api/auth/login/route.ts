@@ -3,23 +3,47 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { encrypt } from '@/lib/session'
+import { isValidEmail, sanitizeInput, RateLimiter } from '@/lib/security'
+
+// Rate limiter for login attempts
+const loginRateLimiter = new RateLimiter(5, 15 * 60 * 1000) // 5 attempts per 15 minutes
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password } = body
 
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeInput(email?.toLowerCase().trim())
+    const sanitizedPassword = sanitizeInput(password)
+
     // Validation
-    if (!email || !password) {
+    if (!sanitizedEmail || !sanitizedPassword) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
       )
     }
 
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Rate limiting
+    const clientIP = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    if (!loginRateLimiter.isAllowed(clientIP)) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
+      )
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: sanitizedEmail },
     })
 
     if (!user) {
@@ -30,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check password
-    const passwordMatch = await bcrypt.compare(password, user.password)
+    const passwordMatch = await bcrypt.compare(sanitizedPassword, user.password)
 
     if (!passwordMatch) {
       return NextResponse.json(
@@ -54,6 +78,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
     })
 
     return NextResponse.json(
