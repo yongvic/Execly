@@ -5,7 +5,7 @@ type Messages = Record<string, Record<string, string>>
 export const messages: Record<Locale, Messages> = {
   en: {
     common: {
-      brand: 'Mentorly',
+      brand: 'Execly',
       dashboard: 'Dashboard',
       browse: 'Browse Services',
       back: 'Back',
@@ -56,7 +56,7 @@ export const messages: Record<Locale, Messages> = {
       step2Desc: 'Review details, compare options, and choose the best fit',
       step3Title: 'Purchase & Use',
       step3Desc: 'Complete payment and get instant access to your service',
-      whyTitle: 'Why Choose Mentorly?',
+      whyTitle: 'Why Choose Execly?',
       feature1: 'Verified and trusted service providers',
       feature2: 'Secure payment and buyer protection',
       feature3: 'Instant access to your services',
@@ -64,7 +64,7 @@ export const messages: Record<Locale, Messages> = {
       feature5: 'Affordable pricing for all budgets',
       feature6: 'No long-term commitments required',
       ctaTitle: 'Ready to Get Started?',
-      ctaDesc: 'Join thousands of entrepreneurs transforming their business with Mentorly',
+      ctaDesc: 'Join thousands of entrepreneurs transforming their business with Execly',
       ctaButton: 'Create Your Free Account',
       company: 'Company',
       legal: 'Legal',
@@ -79,6 +79,8 @@ export const messages: Record<Locale, Messages> = {
       title: 'Welcome Back',
       subtitle: 'Sign in to your account',
       email: 'Email Address',
+      emailOrPhone: 'Email or phone number',
+      identifierPlaceholder: 'you@example.com or +22890000000',
       password: 'Password',
       forgot: 'Forgot password?',
       remember: 'Remember me',
@@ -97,6 +99,7 @@ export const messages: Record<Locale, Messages> = {
       subtitle: 'Join thousands of African entrepreneurs',
       fullName: 'Full Name',
       email: 'Email Address',
+      phone: 'Phone Number',
       password: 'Password',
       confirmPassword: 'Confirm Password',
       minChars: 'At least 6 characters',
@@ -110,6 +113,7 @@ export const messages: Record<Locale, Messages> = {
       google: 'Google',
       facebook: 'Facebook',
       allRequired: 'All fields are required',
+      emailOrPhoneRequired: 'Email or phone number is required',
       passwordShort: 'Password must be at least 6 characters',
       passwordMismatch: 'Passwords do not match',
       acceptTerms: 'You must agree to terms and conditions',
@@ -201,6 +205,8 @@ export const messages: Record<Locale, Messages> = {
       payWithMethod: 'Pay {amount} via {method}',
       demoInfo: 'This is a demo. Use any card details to proceed.',
       orderConfirmed: 'Order Confirmed!',
+      paymentPendingTitle: 'Payment Pending Confirmation',
+      paymentPendingMessage: 'Confirm the USSD request on your phone. Your order will be confirmed automatically.',
       orderSuccess: 'Your payment has been processed successfully. You now have access to all service files.',
       orderTotal: 'Order Total',
       viewOrders: 'View My Orders',
@@ -210,7 +216,7 @@ export const messages: Record<Locale, Messages> = {
       paymentFailed: 'Payment failed',
       failedLoadCart: 'Failed to load cart',
       enterPhoneNumber: 'Please enter your phone number for payment.',
-      secureTransactions: 'Mentorly secures your transactions via local mobile networks.'
+      secureTransactions: 'Execly secures your transactions via local mobile networks.'
     },
     dashboard: {
       logout: 'Logout',
@@ -246,7 +252,7 @@ export const messages: Record<Locale, Messages> = {
   },
   fr: {
     common: {
-      brand: 'Mentorly',
+      brand: 'Execly',
       dashboard: 'Tableau de bord',
       browse: 'Explorer les services',
       back: 'Retour',
@@ -297,7 +303,7 @@ export const messages: Record<Locale, Messages> = {
       step2Desc: 'Comparez les options et choisissez la meilleure',
       step3Title: 'Payer et utiliser',
       step3Desc: 'Payez et accedez instantanement a votre service',
-      whyTitle: 'Pourquoi choisir Mentorly ?',
+      whyTitle: 'Pourquoi choisir Execly ?',
       feature1: 'Prestataires verifies et fiables',
       feature2: 'Paiement securise et protection acheteur',
       feature3: 'Acces immediat aux services',
@@ -320,6 +326,8 @@ export const messages: Record<Locale, Messages> = {
       title: 'Bon retour',
       subtitle: 'Connectez-vous a votre compte',
       email: 'Adresse email',
+      emailOrPhone: 'Email ou numero de telephone',
+      identifierPlaceholder: 'vous@exemple.com ou +22890000000',
       password: 'Mot de passe',
       forgot: 'Mot de passe oublie ?',
       remember: 'Se souvenir de moi',
@@ -338,6 +346,7 @@ export const messages: Record<Locale, Messages> = {
       subtitle: 'Rejoignez des milliers d entrepreneurs africains',
       fullName: 'Nom complet',
       email: 'Adresse email',
+      phone: 'Numero de telephone',
       password: 'Mot de passe',
       confirmPassword: 'Confirmer le mot de passe',
       minChars: 'Au moins 6 caracteres',
@@ -351,6 +360,7 @@ export const messages: Record<Locale, Messages> = {
       google: 'Google',
       facebook: 'Facebook',
       allRequired: 'Tous les champs sont obligatoires',
+      emailOrPhoneRequired: 'Email ou numero de telephone obligatoire',
       passwordShort: 'Le mot de passe doit contenir au moins 6 caracteres',
       passwordMismatch: 'Les mots de passe ne correspondent pas',
       acceptTerms: 'Vous devez accepter les conditions',
@@ -442,6 +452,8 @@ export const messages: Record<Locale, Messages> = {
       payWithMethod: 'Payer {amount} par {method}',
       demoInfo: 'Ceci est une demo. Vous pouvez utiliser n importe quelles informations.',
       orderConfirmed: 'Commande confirmee !',
+      paymentPendingTitle: 'Paiement en attente de confirmation',
+      paymentPendingMessage: 'Confirmez la demande USSD sur votre téléphone. Votre commande sera validée automatiquement.',
       orderSuccess: 'Votre paiement a ete traite avec succes. Vous avez maintenant acces aux fichiers du service.',
       orderTotal: 'Total commande',
       viewOrders: 'Voir mes commandes',
@@ -451,7 +463,7 @@ export const messages: Record<Locale, Messages> = {
       paymentFailed: 'Paiement echoue',
       failedLoadCart: 'Impossible de charger le panier',
       enterPhoneNumber: 'Veuillez entrer votre numero de telephone pour le paiement.',
-      secureTransactions: 'Mentorly securise vos transactions via les reseaux mobiles locaux.'
+      secureTransactions: 'Execly securise vos transactions via les reseaux mobiles locaux.'
     },
     dashboard: {
       logout: 'Deconnexion',
@@ -486,3 +498,4 @@ export const messages: Record<Locale, Messages> = {
     }
   }
 }
+

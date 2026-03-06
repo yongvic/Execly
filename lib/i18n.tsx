@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { type Locale, messages } from '@/lib/messages'
 
@@ -10,28 +10,34 @@ type I18nContextValue = {
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined)
-const STORAGE_KEY = 'mentorly-locale'
+const STORAGE_KEY = 'execly-locale'
 
-function getInitialLocale(): Locale {
-  if (typeof window === 'undefined') return 'en'
-
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'fr' || stored === 'en') return stored
-
-  return window.navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en'
+function replacePathLocale(nextLocale: Locale) {
+  if (typeof window === 'undefined') return
+  const currentPath = window.location.pathname
+  const localizedPath = currentPath.replace(/^\/(fr|en)(?=\/|$)/, `/${nextLocale}`)
+  const destination = localizedPath === currentPath ? `/${nextLocale}${currentPath}` : localizedPath
+  window.location.href = `${destination}${window.location.search}`
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('en')
+export function I18nProvider({
+  children,
+  initialLocale,
+}: {
+  children: React.ReactNode
+  initialLocale: Locale
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale)
 
-  useEffect(() => {
-    setLocale(getInitialLocale())
-  }, [])
-
-  useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, locale)
-    document.documentElement.lang = locale
-  }, [locale])
+  const setLocale = (nextLocale: Locale) => {
+    setLocaleState(nextLocale)
+    if (typeof document !== 'undefined') {
+      document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; samesite=lax`
+      window.localStorage.setItem(STORAGE_KEY, nextLocale)
+      document.documentElement.lang = nextLocale
+    }
+    replacePathLocale(nextLocale)
+  }
 
   const value = useMemo(() => ({ locale, setLocale }), [locale])
 

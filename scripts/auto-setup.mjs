@@ -5,7 +5,7 @@ import { resolve } from 'path';
 const dbPath = resolve('prisma/dev.db');
 const hasDb = existsSync(dbPath);
 
-console.log('🚀 Mentorly Database Auto-Setup\n');
+console.log('🚀 Execly Database Auto-Setup\n');
 
 const runCommand = (cmd, args, name) => {
   return new Promise((resolve, reject) => {
@@ -50,3 +50,4 @@ async function setup() {
 }
 
 setup();
+

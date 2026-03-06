@@ -1,6 +1,6 @@
-# START HERE - Bien Démarrer avec Mentorly
+# START HERE - Bien Démarrer avec Execly
 
-Bienvenue sur le projet **Mentorly** ! Ce document a été mis à jour pour refléter l'arrivée de la base de données PostgreSQL, de la sécurisation JWT, et du nouvel espace Administrateur premium.
+Bienvenue sur le projet **Execly** ! Ce document a été mis à jour pour refléter l'arrivée de la base de données PostgreSQL, de la sécurisation JWT, et du nouvel espace Administrateur premium.
 
 ## Étape 1 : Initialisez vos variables d'environnement
 Avant de commencer, vous devez avoir un cluster de base de données PostgreSQL actif (par exemple, sur **Neon Postgres**).
@@ -61,3 +61,4 @@ Ouvrez votre navigateur sur **http://localhost:3000** et profitez !
 
 **Comment donner le rôle d'Admin à un autre utilisateur ?**
 - Ne touchez pas au code source. Lancez `npx prisma studio` pour ouvrir l'interface visuelle de votre base de données. Cherchez votre utilisateur et changez son champ `role` (limité à `USER, ADMIN, MODERATOR, SUPER_ADMIN` par l'Enum).
+

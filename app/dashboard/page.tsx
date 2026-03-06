@@ -22,6 +22,7 @@ interface Order {
   deliveryDate?: string
   deadlineDate?: string
   isExpress?: boolean
+  deliverableUrl?: string | null
 }
 
 interface Favorite {
@@ -107,7 +108,7 @@ export default function DashboardPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
                 <span className="text-sm font-bold text-primary-foreground">M</span>
               </div>
-              <span className="hidden font-bold text-foreground sm:inline">Mentorly</span>
+              <span className="hidden font-bold text-foreground sm:inline">Execly</span>
             </Link>
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
@@ -210,7 +211,11 @@ export default function DashboardPage() {
                             </div>
                             <div className="text-right">
                               <p className="mb-3 text-lg font-bold text-primary">{formatPrice(order.totalPrice)}</p>
-                              {order.status === 'completed' && <Button size="sm" variant="outline" className="gap-2"><Download className="h-4 w-4" />{t('download')}</Button>}
+                              {order.status === 'completed' && order.deliverableUrl && (
+                                <a href={order.deliverableUrl} target="_blank" rel="noreferrer">
+                                  <Button size="sm" variant="outline" className="gap-2"><Download className="h-4 w-4" />{t('download')}</Button>
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -301,3 +306,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

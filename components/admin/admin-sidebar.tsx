@@ -37,7 +37,7 @@ export function AdminSidebar() {
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
                         M
                     </div>
-                    <span className="text-xl font-bold tracking-tight">Mentorly <span className="text-primary">Admin</span></span>
+                    <span className="text-xl font-bold tracking-tight">Execly <span className="text-primary">Admin</span></span>
                 </Link>
             </div>
 
@@ -85,3 +85,4 @@ export function AdminSidebar() {
         </div>
     )
 }
+

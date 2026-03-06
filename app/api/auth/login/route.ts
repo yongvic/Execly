@@ -4,36 +4,36 @@ import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { encrypt } from '@/lib/session'
 import { isValidEmail, sanitizeInput, RateLimiter } from '@/lib/security'
+import { z } from 'zod'
 
 // Rate limiter for login attempts
 const loginRateLimiter = new RateLimiter(5, 15 * 60 * 1000) // 5 attempts per 15 minutes
+const loginSchema = z.object({
+  identifier: z.string().trim().min(1),
+  password: z.string().min(1),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = body
+    const parsed = loginSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Identifier and password are required' }, { status: 400 })
+    }
 
-    // Sanitize inputs
-    const sanitizedEmail = sanitizeInput(email?.toLowerCase().trim())
+    const { identifier, password } = parsed.data
+
+    const sanitizedIdentifier = sanitizeInput(identifier?.toLowerCase().trim())
     const sanitizedPassword = sanitizeInput(password)
 
-    // Validation
-    if (!sanitizedEmail || !sanitizedPassword) {
+    if (!sanitizedIdentifier || !sanitizedPassword) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Identifier and password are required' },
         { status: 400 }
       )
     }
 
-    if (!isValidEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      )
-    }
-
-    // Rate limiting
-    const clientIP = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+    const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
     if (!loginRateLimiter.isAllowed(clientIP)) {
       return NextResponse.json(
         { error: 'Too many login attempts. Please try again later.' },
@@ -41,10 +41,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email: sanitizedEmail },
-    })
+    const user = isValidEmail(sanitizedIdentifier)
+      ? await prisma.user.findUnique({ where: { email: sanitizedIdentifier } })
+      : await prisma.user.findFirst({ where: { phone: sanitizedIdentifier } })
 
     if (!user) {
       return NextResponse.json(
@@ -53,7 +52,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check password
     const passwordMatch = await bcrypt.compare(sanitizedPassword, user.password)
 
     if (!passwordMatch) {
@@ -63,15 +61,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create secure JWT session token
     const sessionToken = await encrypt({
       id: user.id,
       email: user.email,
-      role: user.role, // Essential for RBAC in middleware
+      role: user.role,
       timestamp: Date.now()
     })
 
-    // Set secure httpOnly cookie
     const cookieStore = await cookies()
     cookieStore.set('session', sessionToken, {
       httpOnly: true,

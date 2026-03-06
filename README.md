@@ -1,6 +1,6 @@
-# Mentorly - Full-Stack Marketplace Application
+# Execly - Full-Stack Marketplace Application
 
-Welcome to Mentorly, a **complete, production-ready full-stack marketplace built with Next.js, TypeScript, and Prisma**.
+Welcome to Execly, a **complete, production-ready full-stack marketplace built with Next.js, TypeScript, and Prisma**.
 
 ## 🎯 What You're Getting
 
@@ -115,7 +115,7 @@ http://localhost:3000
 ## 📁 Project Structure
 
 ```
-mentorly/
+Execly/
 ├── app/
 │   ├── (admin)/                # Secure Admin Space (Layout, Dashboard, Users...)
 │   ├── api/                    # All API routes
@@ -176,3 +176,4 @@ npm run dev -- -p 3001
 ---
 
 **Happy building! 🚀**
+

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 
 interface User {
   id: string
-  email: string
+  email?: string | null
   name: string
   phone?: string
   country?: string
@@ -14,9 +14,9 @@ interface User {
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  register: (email: string, password: string, name: string) => Promise<void>
+  register: (payload: { email?: string; phone?: string; password: string; name: string }) => Promise<void>
   refreshUser: () => Promise<void>
   redirectToBrowse?: () => void
 }
@@ -49,11 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string) => {
+  const getCurrentLocale = () => {
+    if (typeof window === 'undefined') return 'fr'
+    const match = window.location.pathname.match(/^\/(fr|en)(?=\/|$)/)
+    return match?.[1] || 'fr'
+  }
+
+  const login = async (identifier: string, password: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier, password }),
     })
 
     if (!res.ok) {
@@ -66,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Redirect to browse page after successful login
     if (typeof window !== 'undefined') {
-      window.location.href = '/browse'
+      window.location.href = `/${getCurrentLocale()}/browse`
     }
   }
 
@@ -75,11 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (payload: { email?: string; phone?: string; password: string; name: string }) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify(payload),
     })
 
     if (!res.ok) {
@@ -88,7 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Auto login after registration
-    await login(email, password)
+    const identifier = payload.email || payload.phone || ''
+    await login(identifier, payload.password)
   }
 
   return (

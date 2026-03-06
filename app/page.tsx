@@ -43,10 +43,6 @@ export default function LandingPage() {
     { title: t('templates'), desc: t('templatesDesc'), icon: '📄', image: '/images/services/templates.svg' },
     { title: t('writing'), desc: t('writingDesc'), icon: '✍️', image: '/images/services/writing.svg' },
     { title: t('webDev'), desc: t('webDevDesc'), icon: '💻', image: '/images/services/web-dev.svg' },
-    { title: t('taxOptimization'), desc: t('taxOptimizationDesc'), icon: '📊', image: '/images/services/tax-optimization.svg' },
-    { title: t('investmentPortfolio'), desc: t('investmentPortfolioDesc'), icon: '📈', image: '/images/services/investment-portfolio.svg' },
-    { title: t('retirementPlanning'), desc: t('retirementPlanningDesc'), icon: '🏖️', image: '/images/services/retirement-planning.svg' },
-    { title: t('estatePlanning'), desc: t('estatePlanningDesc'), icon: '🏛️', image: '/images/services/estate-planning.svg' },
   ]
 
   const steps = [
@@ -91,7 +87,7 @@ export default function LandingPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
               <span className="text-sm font-bold text-primary-foreground">M</span>
             </div>
-            <span className="text-xl font-bold text-foreground">Mentorly</span>
+            <span className="text-xl font-bold text-foreground">Execly</span>
           </div>
 
           <div className="hidden items-center gap-8 md:flex">
@@ -216,15 +212,15 @@ export default function LandingPage() {
                 <motion.div
                   key={service.title}
                   className={`rounded-xl border bg-card p-6 transition-all duration-300 ${
-                    idx === 4 
-                      ? 'border-green-500 bg-green-50 shadow-lg shadow-green-500/20 scale-105' 
+                    idx === 0
+                      ? 'border-green-500 bg-green-50 shadow-lg shadow-green-500/20 scale-105'
                       : 'border-border hover:border-primary/50 hover:shadow-lg'
                   }`}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.08, duration: 0.45 }}
-                  whileHover={{ y: -8, scale: idx === 4 ? 1.02 : 1.02 }}
+                  whileHover={{ y: -8, scale: 1.02 }}
                 >
                   <div className="mb-4 text-3xl">{service.icon}</div>
                   <h3 className={`mb-2 font-semibold ${idx === 4 ? 'text-green-800' : 'text-foreground'}`}>{service.title}</h3>
@@ -305,7 +301,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8 grid gap-8 md:grid-cols-4">
             <div>
-              <h3 className="mb-4 font-semibold text-foreground">Mentorly</h3>
+              <h3 className="mb-4 font-semibold text-foreground">Execly</h3>
               <p className="text-sm text-foreground/60">{t('marketplace')}</p>
             </div>
             <div>
@@ -334,7 +330,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-sm text-foreground/60 md:flex-row">
-            <p>&copy; 2026 Mentorly. {t('rights')}</p>
+            <p>&copy; 2026 Execly. {t('rights')}</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-foreground">Twitter</a>
               <a href="#" className="hover:text-foreground">LinkedIn</a>
@@ -346,3 +342,4 @@ export default function LandingPage() {
     </div>
   )
 }
+

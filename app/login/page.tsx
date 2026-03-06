@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -13,12 +12,11 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/lib/auth-context'
 
 export default function LoginPage() {
-  const router = useRouter()
   const { login } = useAuth()
   const t = useTranslations('login')
 
   const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false })
+  const [formData, setFormData] = useState({ identifier: '', password: '', rememberMe: false })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,12 +32,11 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      if (!formData.email || !formData.password) {
+      if (!formData.identifier || !formData.password) {
         throw new Error(t('required'))
       }
 
-      await login(formData.email, formData.password)
-      router.push('/dashboard')
+      await login(formData.identifier, formData.password)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('failed'))
     } finally {
@@ -58,7 +55,7 @@ export default function LoginPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
             <span className="text-lg font-bold text-primary-foreground">M</span>
           </div>
-          <span className="text-2xl font-bold text-foreground">Mentorly</span>
+          <span className="text-2xl font-bold text-foreground">Execly</span>
         </div>
 
         <div className="space-y-6 rounded-xl border border-border bg-card p-8 shadow-xl shadow-primary/5">
@@ -76,8 +73,8 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">{t('email')}</label>
-              <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required className="border-border bg-muted" />
+              <label htmlFor="identifier" className="mb-2 block text-sm font-medium text-foreground">{t('emailOrPhone')}</label>
+              <Input id="identifier" name="identifier" type="text" placeholder={t('identifierPlaceholder')} value={formData.identifier} onChange={handleChange} required className="border-border bg-muted" />
             </div>
 
             <div>
@@ -141,3 +138,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

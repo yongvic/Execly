@@ -12,7 +12,7 @@ model User {
   email     String     @unique
   password  String
   name      String
-  phone     String?
+  phone     String?    @unique
   country   String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -20,6 +20,7 @@ model User {
   cart      CartItem[]
   favorites Favorite[]
   orders    Order[]
+  payments  Payment[]
   reviews   Review[]
 }
 
@@ -72,9 +73,27 @@ model Order {
   deadlineDate   DateTime?
   deliverableUrl String?
   isExpress      Boolean   @default(false)
+  paymentId      String?
+  payment        Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   service        Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   review         Review?
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  userId           String
+  amount           Float
+  method           PaymentMethod
+  phone            String
+  status           PaymentStatus @default(PENDING)
+  providerRef      String?       @unique
+  providerResponse String?
+  callbackPayload  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders           Order[]
 }
 
 model Review {
@@ -106,4 +125,15 @@ enum Role {
   ADMIN
   MODERATOR
   SUPER_ADMIN
+}
+
+enum PaymentMethod {
+  FLOOZ
+  TMONEY
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
 }

@@ -10,22 +10,9 @@ import {
     Tooltip,
 } from 'recharts'
 
-const data = [
-    { name: 'Jan', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Fév', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Mar', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Avr', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Mai', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Juin', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Juil', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Août', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Sep', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Oct', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Nov', total: Math.floor(Math.random() * 500000) + 100000 },
-    { name: 'Déc', total: Math.floor(Math.random() * 500000) + 100000 },
-]
+export type OverviewPoint = { name: string; total: number }
 
-export function Overview() {
+export function Overview({ data }: { data: OverviewPoint[] }) {
     return (
         <ResponsiveContainer width="100%" height={350}>
             <BarChart data={data}>

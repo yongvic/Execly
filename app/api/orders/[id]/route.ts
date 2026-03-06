@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
 import { getSession } from '@/lib/session'
+import { z } from 'zod'
+
+const updateOrderSchema = z.object({
+  status: z.enum(['pending', 'confirmed', 'in-progress', 'completed', 'cancelled']),
+})
+const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MODERATOR'])
 
 export async function GET(
   request: NextRequest,
@@ -61,6 +66,7 @@ export async function PUT(
     const { id } = await params
     const session = await getSession()
     const userId = session?.id
+    const role = session?.role?.toString().toUpperCase()
 
     if (!userId) {
       return NextResponse.json(
@@ -69,8 +75,16 @@ export async function PUT(
       )
     }
 
+    if (!role || !ADMIN_ROLES.has(role)) {
+      return NextResponse.json({ error: 'Only administrators can update order status' }, { status: 403 })
+    }
+
     const body = await request.json()
-    const { status } = body
+    const parsed = updateOrderSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 })
+    }
+    const { status } = parsed.data
 
     const order = await prisma.order.findUnique({
       where: { id },
@@ -83,18 +97,10 @@ export async function PUT(
       )
     }
 
-    // Only user can update their order (for notes, delivery info)
-    if (order.userId !== userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
-    }
-
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: {
-        ...(status && { status }),
+        status,
       },
       include: { service: true },
     })

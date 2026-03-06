@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/lib/auth-context'
 import { I18nProvider } from '@/lib/i18n'
+import { cookies } from 'next/headers'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: 'Mentorly - Pre-Made Services Marketplace for African Entrepreneurs',
-  description: 'Find verified graphic design, templates, writing services, and web development solutions. Pre-made, affordable, and ready to use.',
+  title: 'Execly - Services Digitaux Rapides et Abordables',
+  description: 'Commandez vos services digitaux personnalisés en quelques clics: CV, portfolio, site vitrine, visuels et plus.',
   generator: 'v0.app',
   openGraph: {
-    title: 'Mentorly',
-    description: 'Pre-made services marketplace for African entrepreneurs',
+    title: 'Execly',
+    description: 'Plateforme SaaS de services digitaux pour étudiants et jeunes professionnels',
     type: 'website',
   },
   icons: {
@@ -36,15 +33,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+  const initialLocale = cookieStore.get('NEXT_LOCALE')?.value === 'en' ? 'en' : 'fr'
+
   return (
-    <html lang="en">
+    <html lang={initialLocale}>
       <body className="font-sans antialiased">
-        <I18nProvider>
+        <I18nProvider initialLocale={initialLocale}>
           <AuthProvider>
             {children}
           </AuthProvider>

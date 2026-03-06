@@ -4,7 +4,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🔧 Initializing Mentorly Database...\n');
+console.log('🔧 Initializing Execly Database...\n');
 
 try {
   // Generate Prisma Client
@@ -29,3 +29,4 @@ try {
   console.error('❌ Error during initialization:', error.message);
   process.exit(1);
 }
+

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -13,7 +12,6 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/lib/auth-context'
 
 export default function SignupPage() {
-  const router = useRouter()
   const { register } = useAuth()
   const t = useTranslations('signup')
 
@@ -22,6 +20,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
@@ -41,8 +40,11 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      if (!formData.name || !formData.email || !formData.password) {
+      if (!formData.name || !formData.password) {
         throw new Error(t('allRequired'))
+      }
+      if (!formData.email && !formData.phone) {
+        throw new Error(t('emailOrPhoneRequired'))
       }
       if (formData.password.length < 6) {
         throw new Error(t('passwordShort'))
@@ -54,8 +56,12 @@ export default function SignupPage() {
         throw new Error(t('acceptTerms'))
       }
 
-      await register(formData.email, formData.password, formData.name)
-      router.push('/dashboard')
+      await register({
+        name: formData.name,
+        email: formData.email || undefined,
+        phone: formData.phone || undefined,
+        password: formData.password,
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('failed'))
     } finally {
@@ -74,7 +80,7 @@ export default function SignupPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
             <span className="text-lg font-bold text-primary-foreground">M</span>
           </div>
-          <span className="text-2xl font-bold text-foreground">Mentorly</span>
+          <span className="text-2xl font-bold text-foreground">Execly</span>
         </div>
 
         <div className="space-y-6 rounded-xl border border-border bg-card p-8 shadow-xl shadow-primary/5">
@@ -98,7 +104,12 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">{t('email')}</label>
-              <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required className="border-border bg-muted" />
+              <Input id="email" name="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} className="border-border bg-muted" />
+            </div>
+
+            <div>
+              <label htmlFor="phone" className="mb-2 block text-sm font-medium text-foreground">{t('phone')}</label>
+              <Input id="phone" name="phone" type="tel" placeholder="+228 90 00 00 00" value={formData.phone} onChange={handleChange} className="border-border bg-muted" />
             </div>
 
             <div>
@@ -162,3 +173,4 @@ export default function SignupPage() {
     </div>
   )
 }
+

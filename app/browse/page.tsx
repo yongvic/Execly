@@ -90,7 +90,7 @@ function BrowseContent() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
                 <span className="text-sm font-bold text-primary-foreground">M</span>
               </div>
-              <span className="hidden font-bold text-foreground sm:inline">Mentorly</span>
+              <span className="hidden font-bold text-foreground sm:inline">Execly</span>
             </Link>
             <div className="flex items-center gap-3">
               <LanguageSwitcher />
@@ -231,3 +231,4 @@ export default function BrowsePage() {
     </Suspense>
   )
 }
+

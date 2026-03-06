@@ -65,6 +65,7 @@ function CheckoutContent() {
   const [discount, setDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'flooz' | 'tmoney'>('flooz')
   const [formData, setFormData] = useState({ phone: '', name: '' })
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'CONFIRMED' | 'FAILED' | null>(null)
 
   useEffect(() => {
     if (!user && !loading) router.push('/login')
@@ -144,8 +145,10 @@ function CheckoutContent() {
       })
 
       if (!response.ok) throw new Error(t('failedOrder'))
+      const data = await response.json()
 
       setCartItems([])
+      setPaymentStatus(data.paymentStatus || 'PENDING')
       setActiveStep('confirmation')
     } catch (err) {
       setError(err instanceof Error ? err.message : (err as any).message || t('paymentFailed'))
@@ -338,8 +341,12 @@ function CheckoutContent() {
         />
         <div className="mb-6 flex justify-center"><div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20"><Check className="h-8 w-8 text-green-600" /></div></div>
 
-        <h1 className="mb-2 text-3xl font-bold text-foreground">{t('orderConfirmed')}</h1>
-        <p className="mb-6 text-foreground/60">{t('orderSuccess')}</p>
+        <h1 className="mb-2 text-3xl font-bold text-foreground">
+          {paymentStatus === 'CONFIRMED' ? t('orderConfirmed') : t('paymentPendingTitle')}
+        </h1>
+        <p className="mb-6 text-foreground/60">
+          {paymentStatus === 'CONFIRMED' ? t('orderSuccess') : t('paymentPendingMessage')}
+        </p>
 
         <div className="mb-8 space-y-4 rounded-lg border border-border bg-card p-4">
           <div><p className="text-xs text-foreground/60">{t('orderTotal')}</p><p className="text-2xl font-bold text-primary">{formatPrice(total)}</p></div>

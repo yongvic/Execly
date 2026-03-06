@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Search, Filter, MoreHorizontal } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminUsersPage() {
     // En production, nous utiliserions une requête API avec pagination
     // Pour la version actuelle, on récupère les X derniers inscrits
