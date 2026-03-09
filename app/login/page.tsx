@@ -13,11 +13,11 @@ export default function LoginPage() {
   const [error, setError] = useState('')
 
   const mergedT = (key: string) => {
-    try {
-      return t(key)
-    } catch {
-      return ts(key)
+    const primary = t(key as never)
+    if (primary === `login.${key}` || primary === key) {
+      return ts(key as never)
     }
+    return primary
   }
 
   const onSubmit = async (data: any) => {

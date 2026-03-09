@@ -13,11 +13,11 @@ export default function SignupPage() {
   const [error, setError] = useState('')
 
   const mergedT = (key: string) => {
-    try {
-      return t(key)
-    } catch {
-      return tl(key)
+    const primary = t(key as never)
+    if (primary === `signup.${key}` || primary === key) {
+      return tl(key as never)
     }
+    return primary
   }
 
   const onSubmit = async (data: any) => {

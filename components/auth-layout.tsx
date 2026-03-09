@@ -28,6 +28,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
   })
 
   const isLogin = mode === 'login'
+  const trustedIcons = [Globe, ShieldCheck, Star, Check]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -104,10 +105,15 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
             </motion.div>
           </div>
 
-          <div className="relative z-10 flex items-center gap-4 bg-white/50 backdrop-blur-md p-4 rounded-2xl border border-zinc-200 max-w-sm shadow-sm">
+          <div className="relative z-10 flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white/60 px-4 py-3 shadow-sm">
             <div className="flex -space-x-2">
-              {[1,2,3].map(i => (
-                <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-zinc-100" />
+              {trustedIcons.map((Icon, index) => (
+                <div
+                  key={index}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-zinc-50 text-primary shadow"
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
               ))}
             </div>
             <p className="text-xs text-zinc-500">
