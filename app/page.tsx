@@ -182,13 +182,15 @@ export default function LandingPage() {
               {!user ? (
                 <>
                   <Link href="/login">
-                    <Button variant="ghost" className="h-10 rounded-full border border-zinc-200 px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 hover:text-primary transition-colors">
+                    <Button variant="outline" className="hidden md:flex h-10 rounded-full border-zinc-200 px-6 text-sm font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/20 transition-all text-zinc-600">
                       Connexion
                     </Button>
                   </Link>
+
                   <Link href="/signup">
-                    <Button className="h-10 rounded-full bg-primary px-5 text-sm font-semibold text-white shadow-xl shadow-primary/40 hover:bg-primary/90 transition-colors">
-                      Créer mon compte
+                    <Button className="h-10 rounded-full bg-primary px-6 text-sm font-bold shadow-md shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all group text-white">
+                      Démarrer
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </Link>
                 </>
