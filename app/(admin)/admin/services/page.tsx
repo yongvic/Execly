@@ -1,159 +1,93 @@
-import React from 'react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Search, Filter, Eye, Edit, Trash2, CheckCircle2 } from 'lucide-react'
-import { prisma } from '@/lib/prisma'
 import Image from 'next/image'
+import { prisma } from '@/lib/prisma'
 import { formatPrice } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminServicesPage() {
-    const services = await prisma.service.findMany({
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        include: {
-            _count: {
-                select: { orders: true }
-            }
-        }
-    })
+  const services = await prisma.service.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 60,
+    include: {
+      templates: { select: { id: true, name: true, isActive: true } },
+      deliveryOptions: { select: { id: true, label: true, turnaroundDays: true, priceMultiplier: true, isDefault: true } },
+      _count: { select: { orders: true, favorites: true } },
+    },
+  })
 
-    return (
-        <div className="flex-1 space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Services & Contenus</h2>
-                    <p className="text-muted-foreground mt-1">Supervisez les services proposés, modérez le contenu et validez les nouvelles publications.</p>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <button className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors">
-                        Créer un Service
-                    </button>
-                </div>
-            </div>
+  const activeCount = services.filter((s) => s.isActive).length
 
-            <Card className="rounded-2xl border-none shadow-sm bg-background">
-                <CardHeader className="border-b pb-4 mb-4">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div className="relative w-full max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher (titre, vendeur, catégorie)..."
-                                className="w-full pl-9 pr-4 py-2 rounded-full border bg-muted/30 focus:bg-background focus:ring-1 focus:ring-primary focus:outline-none transition-colors text-sm"
-                            />
-                        </div>
+  return (
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-3xl font-bold tracking-tight">Services & Templates</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Gestion catalogue, pricing et options de livraison.</p>
+      </div>
 
-                        <div className="flex gap-2 text-sm">
-                            <select className="border rounded-md px-3 py-2 bg-background hover:bg-muted/50 cursor-pointer">
-                                <option value="all">Toutes les catégories</option>
-                                <option value="design">Design Graphique</option>
-                                <option value="dev">Développement Web</option>
-                                <option value="writing">Rédaction</option>
-                            </select>
-                            <select className="border rounded-md px-3 py-2 bg-background hover:bg-muted/50 cursor-pointer">
-                                <option value="all">Tous les statuts</option>
-                                <option value="published">Publiés</option>
-                                <option value="draft">Brouillons</option>
-                                <option value="flagged">Signalés</option>
-                            </select>
-                        </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Services</p><p className="text-2xl font-semibold">{services.length}</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Actifs</p><p className="text-2xl font-semibold">{activeCount}</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Inactifs</p><p className="text-2xl font-semibold">{services.length - activeCount}</p></div>
+      </div>
+
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 font-medium">Service</th>
+                <th className="px-4 py-3 font-medium">Prix base</th>
+                <th className="px-4 py-3 font-medium">Templates</th>
+                <th className="px-4 py-3 font-medium">Délais</th>
+                <th className="px-4 py-3 font-medium">Orders</th>
+                <th className="px-4 py-3 font-medium">Etat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {services.map((service) => (
+                <tr key={service.id} className="border-t border-slate-100 align-top">
+                  <td className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="relative h-12 w-16 overflow-hidden rounded-md bg-slate-100">
+                        {service.image ? <Image src={service.image} alt={service.name} fill className="object-cover" /> : null}
+                      </div>
+                      <div>
+                        <p className="font-medium">{service.name}</p>
+                        <p className="text-xs text-slate-500">{service.category} · {service.slug}</p>
+                      </div>
                     </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="relative w-full overflow-auto">
-                        <table className="w-full caption-bottom text-sm text-left">
-                            <thead className="[&_tr]:border-b bg-muted/50 text-muted-foreground">
-                                <tr className="border-b transition-colors whitespace-nowrap">
-                                    <th className="h-10 px-4 font-medium align-middle">Service</th>
-                                    <th className="h-10 px-4 font-medium align-middle">Vendeur</th>
-                                    <th className="h-10 px-4 font-medium align-middle">Prix / Ventes</th>
-                                    <th className="h-10 px-4 font-medium align-middle">Statut</th>
-                                    <th className="h-10 px-4 font-medium align-middle text-right w-[150px]">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="[&_tr:last-child]:border-0">
-                                {services.map((service) => (
-                                    <tr key={service.id} className="border-b transition-colors hover:bg-muted/30">
-                                        <td className="p-4 align-middle">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-12 w-16 relative rounded overflow-hidden bg-muted flex-shrink-0">
-                                                    {service.image ? (
-                                                        <Image
-                                                            src={service.image}
-                                                            alt={service.name}
-                                                            fill
-                                                            className="object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs bg-slate-100">Sans Image</div>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground line-clamp-1 max-w-[250px]">{service.name}</span>
-                                                    <span className="text-xs text-muted-foreground">{service.category}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm">{service.provider}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-emerald-600">{formatPrice(service.price)}</span>
-                                                <span className="text-xs text-muted-foreground">{service._count.orders} vente(s)</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            {/* En implémentation réelle, on ajouterait un champ status à Prisma */}
-                                            <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                <CheckCircle2 className="w-3 h-3" />
-                                                Publié
-                                            </span>
-                                        </td>
-                                        <td className="p-4 align-middle text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-slate-500 transition-colors" title="Prévisualiser">
-                                                    <Eye className="h-4 w-4" />
-                                                </button>
-                                                <button className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-blue-500 transition-colors" title="Éditer">
-                                                    <Edit className="h-4 w-4" />
-                                                </button>
-                                                <button className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-destructive/10 text-destructive transition-colors" title="Supprimer/Archiver">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-
-                                {services.length === 0 && (
-                                    <tr>
-                                        <td colSpan={5} className="h-24 text-center text-muted-foreground">
-                                            Aucun service trouvé.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-sky-700">{formatPrice(service.price)}</td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-1">
+                      {service.templates.map((t) => (
+                        <p key={t.id} className="text-xs">{t.name} <span className={t.isActive ? 'text-emerald-600' : 'text-slate-500'}>{t.isActive ? 'active' : 'off'}</span></p>
+                      ))}
+                      {service.templates.length === 0 && <p className="text-xs text-slate-500">Aucun template</p>}
                     </div>
-
-                    {/* Pagination simple */}
-                    <div className="flex items-center justify-between px-4 py-4 border-t">
-                        <div className="text-xs text-muted-foreground">
-                            Affiche <strong>1-{services.length}</strong> services
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button disabled className="px-3 py-1 border rounded text-xs opacity-50 cursor-not-allowed">Précédent</button>
-                            <button className="px-3 py-1 border rounded text-xs hover:bg-muted">Suivant</button>
-                        </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="space-y-1">
+                      {service.deliveryOptions.map((d) => (
+                        <p key={d.id} className="text-xs">{d.label} · {d.turnaroundDays}j · x{d.priceMultiplier}{d.isDefault ? ' (default)' : ''}</p>
+                      ))}
                     </div>
-                </CardContent>
-            </Card>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p className="font-medium">{service._count.orders}</p>
+                    <p className="text-xs text-slate-500">{service._count.favorites} favoris</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-1 text-xs ${service.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                      {service.isActive ? 'ACTIF' : 'INACTIF'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-    )
+      </div>
+    </div>
+  )
 }

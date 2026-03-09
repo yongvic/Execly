@@ -12,14 +12,6 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | undefined>(undefined)
 const STORAGE_KEY = 'execly-locale'
 
-function replacePathLocale(nextLocale: Locale) {
-  if (typeof window === 'undefined') return
-  const currentPath = window.location.pathname
-  const localizedPath = currentPath.replace(/^\/(fr|en)(?=\/|$)/, `/${nextLocale}`)
-  const destination = localizedPath === currentPath ? `/${nextLocale}${currentPath}` : localizedPath
-  window.location.href = `${destination}${window.location.search}`
-}
-
 export function I18nProvider({
   children,
   initialLocale,
@@ -35,8 +27,8 @@ export function I18nProvider({
       document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; samesite=lax`
       window.localStorage.setItem(STORAGE_KEY, nextLocale)
       document.documentElement.lang = nextLocale
+      window.location.reload()
     }
-    replacePathLocale(nextLocale)
   }
 
   const value = useMemo(() => ({ locale, setLocale }), [locale])

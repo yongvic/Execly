@@ -1,279 +1,320 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
+
+const serviceCatalog = [
+  {
+    slug: 'cv-pro',
+    name: 'Creation de CV professionnel',
+    category: 'cv',
+    description: 'CV premium adapte a ton objectif.',
+    longDescription: 'Tu choisis un template, nous livrons un CV premium optimise ATS.',
+    price: 25000,
+    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=800&fit=crop',
+    deliveryDays: 4,
+    provider: 'Execly Studio',
+    included: ['Audit profil', '2 revisions', 'PDF + DOCX'],
+    template: {
+      slug: 'cv-minimal-ats',
+      name: 'Minimal CV ATS',
+      description: 'Template CV moderne et lisible pour les recruteurs.',
+      previewImage: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=800&fit=crop',
+      tags: ['cv', 'ats', 'minimal'],
+    },
+  },
+  {
+    slug: 'portfolio-pro',
+    name: 'Creation de portfolio',
+    category: 'portfolio',
+    description: 'Portfolio digital moderne pour etudiants et freelances.',
+    longDescription: 'Une structure claire, un design impactant et une personnalisation complete.',
+    price: 80000,
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=800&fit=crop',
+    deliveryDays: 7,
+    provider: 'Execly Studio',
+    included: ['Structure UX', 'Direction visuelle', 'Retouches'],
+    template: {
+      slug: 'portfolio-creative-grid',
+      name: 'Portfolio Creative Grid',
+      description: 'Template portfolio visuel pour designers et devs.',
+      previewImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&h=800&fit=crop',
+      tags: ['portfolio', 'creative'],
+    },
+  },
+  {
+    slug: 'graphic-design',
+    name: 'Design graphique (flyers/visuels)',
+    category: 'graphic-design',
+    description: 'Visuels branding modernes et conversion-focused.',
+    longDescription: 'Flyers, visuels social media et mini-kit branding premium.',
+    price: 35000,
+    image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=1200&h=800&fit=crop',
+    deliveryDays: 3,
+    provider: 'Execly Studio',
+    included: ['Direction creative', '3 variantes', 'Fichiers HD'],
+    template: {
+      slug: 'flyer-bold-launch',
+      name: 'Flyer Bold Launch',
+      description: 'Template graphique fort pour promotions et campagnes.',
+      previewImage: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?w=1200&h=800&fit=crop',
+      tags: ['design', 'flyer'],
+    },
+  },
+  {
+    slug: 'web-vitrine',
+    name: 'Creation de site web vitrine',
+    category: 'web-dev',
+    description: 'Site vitrine moderne, responsive et rapide.',
+    longDescription: 'Une presence web premium orientee conversion pour ton profil ou business.',
+    price: 180000,
+    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1200&h=800&fit=crop',
+    deliveryDays: 10,
+    provider: 'Execly Studio',
+    included: ['UI premium', 'Developpement', 'SEO technique de base'],
+    template: {
+      slug: 'saas-velocity',
+      name: 'SaaS Velocity',
+      description: 'Template landing moderne style startup premium.',
+      previewImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&h=800&fit=crop',
+      tags: ['web', 'saas'],
+    },
+  },
+  {
+    slug: 'slides-pro',
+    name: 'Presentation PowerPoint',
+    category: 'presentation',
+    description: 'Slides premium pour soutenance, pitch ou projet.',
+    longDescription: 'Storyline claire + design visuel pour presentations impactantes.',
+    price: 45000,
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=800&fit=crop',
+    deliveryDays: 4,
+    provider: 'Execly Studio',
+    included: ['Structure narrative', 'Animations subtiles', 'PPTX + PDF'],
+    template: {
+      slug: 'pitch-modern',
+      name: 'Pitch Deck Modern',
+      description: 'Template de presentation clair, business et moderne.',
+      previewImage: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=800&fit=crop',
+      tags: ['slides', 'pitch'],
+    },
+  },
+  {
+    slug: 'writing-academic',
+    name: 'Correction et redaction academique',
+    category: 'writing',
+    description: 'Correction, reformulation et redaction academique.',
+    longDescription: 'Accompagnement memoires, rapports et devoirs avec qualite premium.',
+    price: 30000,
+    image: 'https://images.unsplash.com/photo-1456324504439-367cee3b3c32?w=1200&h=800&fit=crop',
+    deliveryDays: 5,
+    provider: 'Execly Studio',
+    included: ['Correction avancee', 'Mise en forme', 'Feedback detaille'],
+    template: {
+      slug: 'academic-report-pro',
+      name: 'Academic Report Pro',
+      description: 'Template de rendu academique propre et structure.',
+      previewImage: 'https://images.unsplash.com/photo-1456324504439-367cee3b3c32?w=1200&h=800&fit=crop',
+      tags: ['writing', 'academic'],
+    },
+  },
+]
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Reset seed Execly v2...')
 
-  // Create test users
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  await prisma.message.deleteMany()
+  await prisma.chatThread.deleteMany()
+  await prisma.notification.deleteMany()
+  await prisma.notificationPreference.deleteMany()
+  await prisma.deliverable.deleteMany()
+  await prisma.review.deleteMany()
+  await prisma.favorite.deleteMany()
+  await prisma.cartItem.deleteMany()
+  await prisma.order.deleteMany()
+  await prisma.payment.deleteMany()
+  await prisma.template.deleteMany()
+  await prisma.serviceDeliveryOption.deleteMany()
+  await prisma.service.deleteMany()
+  await prisma.user.deleteMany()
 
-  const user1 = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
-    update: {},
-    create: {
+  const hashedPassword = await bcrypt.hash('password123', 10)
+
+  const user = await prisma.user.create({
+    data: {
       email: 'user@example.com',
-      name: 'John Doe',
+      name: 'Young User',
       password: hashedPassword,
-      phone: '+1 234 567 8900',
-      country: 'Nigeria',
+      phone: '+22890000000',
+      country: 'TG',
+      role: 'USER',
+      notificationPreferences: {
+        create: { inAppEnabled: true, emailEnabled: true, whatsappEnabled: true },
+      },
     },
-  });
+  })
 
-  const user2 = await prisma.user.upsert({
-    where: { email: 'demo@example.com' },
-    update: {},
-    create: {
-      email: 'demo@example.com',
-      name: 'Jane Smith',
+  const admin = await prisma.user.create({
+    data: {
+      email: 'admin@example.com',
+      name: 'Execly Admin',
       password: hashedPassword,
-      phone: '+1 987 654 3210',
-      country: 'Kenya',
+      phone: '+22891000000',
+      country: 'TG',
+      role: 'ADMIN',
+      notificationPreferences: {
+        create: { inAppEnabled: true, emailEnabled: true, whatsappEnabled: true },
+      },
     },
-  });
+  })
 
-  console.log('✓ Users created');
+  const createdServices = []
+  for (const s of serviceCatalog) {
+    const service = await prisma.service.create({
+      data: {
+        slug: s.slug,
+        name: s.name,
+        category: s.category,
+        description: s.description,
+        longDescription: s.longDescription,
+        price: s.price,
+        image: s.image,
+        deliveryDays: s.deliveryDays,
+        provider: s.provider,
+        included: JSON.stringify(s.included),
+      },
+    })
 
-  // Create sample services
-  const services = [
-    {
-      name: 'Professional Logo Design',
-      category: 'graphic-design',
-      description: 'Custom logo design with unlimited revisions',
-      longDescription:
-        'Get a professionally designed logo that represents your brand. Includes 5 unique concepts, unlimited revisions until satisfaction, and source files in all formats.',
-      price: 100000,
-      image:
-        'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=500&h=500&fit=crop',
-      rating: 4.8,
-      reviewCount: 124,
-      deliveryDays: 5,
-      provider: 'Creative Studio',
-      providerImage:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      providerRating: 4.9,
-      included: JSON.stringify([
-        '5 unique logo concepts',
-        'Unlimited revisions',
-        'All file formats (PNG, SVG, AI)',
-        'Brand guidelines document',
-        'Commercial license',
-      ]),
-    },
-    {
-      name: 'Website Templates Bundle',
-      category: 'templates',
-      description: 'Modern responsive website templates',
-      longDescription:
-        'Get access to 50+ modern, responsive website templates built with HTML, CSS, and JavaScript. All templates are fully customizable and ready to use.',
-      price: 30000,
-      image:
-        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&h=500&fit=crop',
-      rating: 4.6,
-      reviewCount: 89,
-      deliveryDays: 1,
-      provider: 'Template Hub',
-      providerImage:
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-      providerRating: 4.8,
-      included: JSON.stringify([
-        '50+ responsive templates',
-        'Source code access',
-        'Free updates',
-        'Documentation',
-        'Personal support',
-      ]),
-    },
-    {
-      name: 'Content Writing Service',
-      category: 'writing',
-      description: 'SEO-optimized blog posts and articles',
-      longDescription:
-        'Professional writers will create engaging, SEO-optimized content for your blog or website. Includes research, writing, editing, and optimization.',
-      price: 60000,
-      image:
-        'https://images.unsplash.com/photo-1455849318169-8381a305dda7?w=500&h=500&fit=crop',
-      rating: 4.9,
-      reviewCount: 156,
-      deliveryDays: 7,
-      provider: 'Writing Pro',
-      providerImage:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      providerRating: 4.9,
-      included: JSON.stringify([
-        'Custom content creation',
-        'SEO optimization',
-        'Plagiarism check',
-        '2 rounds of revisions',
-        'Keyword research',
-      ]),
-    },
-    {
-      name: 'WordPress Website Setup',
-      category: 'web-dev',
-      description: 'Complete WordPress site setup with plugins',
-      longDescription:
-        'Get a fully functional WordPress website with your choice of premium theme, essential plugins, and basic customization.',
-      price: 150000,
-      image:
-        'https://images.unsplash.com/photo-1460925895917-adf4e565db11?w=500&h=500&fit=crop',
-      rating: 4.7,
-      reviewCount: 92,
-      deliveryDays: 10,
-      provider: 'Web Masters',
-      providerImage:
-        'https://images.unsplash.com/photo-1507537557991-b3cf7e4440b9?w=100&h=100&fit=crop',
-      providerRating: 4.9,
-      included: JSON.stringify([
-        'Domain setup assistance',
-        'WordPress installation',
-        'Premium theme',
-        '10 essential plugins',
-        'Basic SEO setup',
-        '30 days support',
-      ]),
-    },
-    {
-      name: 'Business Card Design',
-      category: 'graphic-design',
-      description: 'Unique business card design',
-      longDescription:
-        'Professional business card design with multiple concepts and print-ready files.',
-      price: 35000,
-      image:
-        'https://images.unsplash.com/photo-1611605698335-8be5fcf97f4e?w=500&h=500&fit=crop',
-      rating: 4.5,
-      reviewCount: 67,
-      deliveryDays: 3,
-      provider: 'Design Pro',
-      providerImage:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-      providerRating: 4.8,
-      included: JSON.stringify([
-        '3 design concepts',
-        'Print-ready files',
-        'Unlimited revisions',
-        'Source file included',
-      ]),
-    },
-    {
-      name: 'Email Template Collection',
-      category: 'templates',
-      description: '30 responsive email templates',
-      longDescription:
-        'Professional email templates for marketing campaigns, newsletters, and transactional emails.',
-      price: 50000,
-      image:
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop',
-      rating: 4.4,
-      reviewCount: 54,
-      deliveryDays: 1,
-      provider: 'Email Design Studio',
-      providerImage:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      providerRating: 4.7,
-      included: JSON.stringify([
-        '30 responsive templates',
-        'HTML and Litmus tested',
-        'Customizable sections',
-        'Documentation',
-      ]),
-    },
-    {
-      name: 'Resume Writing Service',
-      category: 'writing',
-      description: 'Professional resume and CV writing',
-      longDescription:
-        'Get a professionally written resume optimized for ATS systems. Includes cover letter and LinkedIn profile optimization.',
-      price: 45000,
-      image:
-        'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=500&fit=crop',
-      rating: 4.8,
-      reviewCount: 203,
-      deliveryDays: 5,
-      provider: 'Career Experts',
-      providerImage:
-        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-      providerRating: 4.9,
-      included: JSON.stringify([
-        'Professional resume',
-        'Cover letter',
-        'LinkedIn optimization',
-        '3 revisions',
-        'ATS optimization',
-      ]),
-    },
-    {
-      name: 'Mobile App Development',
-      category: 'web-dev',
-      description: 'Custom mobile app development',
-      longDescription:
-        'Build a custom mobile application for iOS and Android with modern technologies and best practices.',
-      price: 850000,
-      image:
-        'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&h=500&fit=crop',
-      rating: 4.9,
-      reviewCount: 45,
-      deliveryDays: 30,
-      provider: 'App Development Co',
-      providerImage:
-        'https://images.unsplash.com/photo-1507537557991-b3cf7e4440b9?w=100&h=100&fit=crop',
-      providerRating: 5.0,
-      included: JSON.stringify([
-        'iOS and Android development',
-        'UI/UX design',
-        'API integration',
-        'Testing and QA',
-        '3 months support',
-      ]),
-    },
-  ];
+    await prisma.template.create({
+      data: {
+        serviceId: service.id,
+        slug: s.template.slug,
+        name: s.template.name,
+        category: s.category,
+        description: s.template.description,
+        previewImage: s.template.previewImage,
+        tags: JSON.stringify(s.template.tags),
+      },
+    })
 
-  for (const service of services) {
-    const existing = await prisma.service.findFirst({
-      where: { name: service.name }
-    });
-    if (!existing) {
-      await prisma.service.create({
-        data: service,
-      });
-    }
+    await prisma.serviceDeliveryOption.createMany({
+      data: [
+        {
+          serviceId: service.id,
+          label: 'Standard',
+          turnaroundDays: s.deliveryDays,
+          priceMultiplier: 1,
+          isDefault: true,
+        },
+        {
+          serviceId: service.id,
+          label: 'Express',
+          turnaroundDays: Math.max(1, Math.floor(s.deliveryDays * 0.6)),
+          priceMultiplier: 1.35,
+          isDefault: false,
+        },
+      ],
+    })
+
+    createdServices.push(service)
   }
 
-  console.log('✓ Services created');
+  const cvService = createdServices[0]
+  const cvTemplate = await prisma.template.findFirstOrThrow({
+    where: { serviceId: cvService.id },
+  })
 
-  // Add a sample review
+  const payment = await prisma.payment.create({
+    data: {
+      userId: user.id,
+      amount: cvService.price,
+      method: 'FLOOZ',
+      phone: user.phone,
+      status: 'CONFIRMED',
+      providerRef: `seed_${Date.now()}`,
+      otpCode: '123456',
+      otpConfirmedAt: new Date(),
+    },
+  })
+
   const order = await prisma.order.create({
     data: {
-      userId: user1.id,
-      serviceId: (await prisma.service.findFirst({ where: { category: 'graphic-design' } })).id,
+      userId: user.id,
+      serviceId: cvService.id,
+      templateId: cvTemplate.id,
       quantity: 1,
-      totalPrice: 100000,
-      status: 'completed',
+      totalPrice: cvService.price,
+      status: 'COMPLETED',
+      paymentId: payment.id,
+      customizationBrief: 'CV pour candidature stage produit.',
+      deadlineDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
+      deliverableUrl: 'https://blob.vercel-storage.com/execly/sample-cv.pdf',
     },
-  });
+  })
 
-  await prisma.review.create({
+  await prisma.deliverable.create({
     data: {
       orderId: order.id,
-      userId: user1.id,
-      serviceId: order.serviceId,
-      rating: 5,
-      comment: 'Excellent service! The designer understood my vision perfectly.',
+      fileName: 'sample-cv.pdf',
+      blobUrl: 'https://blob.vercel-storage.com/execly/sample-cv.pdf',
+      mimeType: 'application/pdf',
+      uploadedById: admin.id,
     },
-  });
+  })
 
-  console.log('✓ Sample review created');
+  const thread = await prisma.chatThread.create({
+    data: {
+      orderId: order.id,
+      customerId: user.id,
+    },
+  })
 
-  console.log('✅ Seeding completed successfully!');
+  await prisma.message.createMany({
+    data: [
+      {
+        threadId: thread.id,
+        senderId: admin.id,
+        body: 'Bonjour, nous avons bien recu ton brief. Livraison prevue sous 4 jours.',
+      },
+      {
+        threadId: thread.id,
+        senderId: user.id,
+        body: 'Parfait, merci.',
+      },
+    ],
+  })
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: user.id,
+        title: 'Paiement confirme',
+        body: 'Ton paiement a ete confirme et la commande est en cours.',
+        channel: 'IN_APP',
+      },
+      {
+        userId: user.id,
+        title: 'Paiement confirme (Email)',
+        body: 'Un email de confirmation a ete envoye.',
+        channel: 'EMAIL',
+      },
+      {
+        userId: user.id,
+        title: 'Paiement confirme (WhatsApp)',
+        body: 'Un message WhatsApp de confirmation a ete envoye.',
+        channel: 'WHATSAPP',
+      },
+    ],
+  })
+
+  console.log('Seed Execly v2 termine.')
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
-    process.exit(1);
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

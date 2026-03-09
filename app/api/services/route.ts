@@ -46,11 +46,37 @@ export async function GET(request: NextRequest) {
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: 'desc' },
+      include: {
+        deliveryOptions: {
+          orderBy: { turnaroundDays: 'asc' },
+        },
+        templates: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            previewImage: true,
+          },
+          take: 1,
+        },
+      },
+    })
+
+    const enriched = services.map((service) => {
+      const defaultOption =
+        service.deliveryOptions.find((opt) => opt.isDefault) ?? service.deliveryOptions[0]
+
+      return {
+        ...service,
+        basePrice: service.price,
+        defaultDeliveryOption: defaultOption,
+        sampleTemplate: service.templates[0] ?? null,
+      }
     })
 
     return NextResponse.json(
       {
-        services,
+        services: enriched,
         pagination: {
           page,
           limit,

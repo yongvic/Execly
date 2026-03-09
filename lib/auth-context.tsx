@@ -49,12 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const getCurrentLocale = () => {
-    if (typeof window === 'undefined') return 'fr'
-    const match = window.location.pathname.match(/^\/(fr|en)(?=\/|$)/)
-    return match?.[1] || 'fr'
-  }
-
   const login = async (identifier: string, password: string) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -72,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Redirect to browse page after successful login
     if (typeof window !== 'undefined') {
-      window.location.href = `/${getCurrentLocale()}/browse`
+      window.location.href = '/browse'
     }
   }
 

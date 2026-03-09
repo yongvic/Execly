@@ -60,22 +60,22 @@ export const config = {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const { locale, pathname: localizedPathname } = getPathWithoutLocale(pathname)
+  const effectiveLocale = locale || detectLocale(request)
 
-  if (!locale) {
-    const nextLocale = detectLocale(request)
-    const redirectUrl = new URL(`/${nextLocale}${pathname}`, request.url)
+  // Keep stable non-prefixed URLs; locale is persisted in cookie.
+  if (locale) {
+    const redirectUrl = new URL(localizedPathname, request.url)
     const response = NextResponse.redirect(redirectUrl)
-    response.cookies.set('NEXT_LOCALE', nextLocale, { path: '/', sameSite: 'lax' })
+    response.cookies.set('NEXT_LOCALE', locale, { path: '/', sameSite: 'lax' })
+    response.headers.set('x-app-locale', locale)
     return response
   }
 
-  const adminGuard = await guardAdmin(request, localizedPathname, locale)
+  const adminGuard = await guardAdmin(request, pathname, effectiveLocale)
   if (adminGuard) return adminGuard
 
-  const rewriteUrl = request.nextUrl.clone()
-  rewriteUrl.pathname = localizedPathname
-  const response = NextResponse.rewrite(rewriteUrl)
-  response.cookies.set('NEXT_LOCALE', locale, { path: '/', sameSite: 'lax' })
-  response.headers.set('x-app-locale', locale)
+  const response = NextResponse.next()
+  response.cookies.set('NEXT_LOCALE', effectiveLocale, { path: '/', sameSite: 'lax' })
+  response.headers.set('x-app-locale', effectiveLocale)
   return response
 }

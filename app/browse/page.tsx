@@ -1,234 +1,230 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { AlertCircle, Clock, Search, Star } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { TiltCard } from '@/components/animations/tilt-card'
-import { LanguageSwitcher } from '@/components/language-switcher'
-import { Badge } from '@/components/ui/badge'
-import { Input } from '@/components/ui/input'
-import { formatPrice } from '@/lib/format'
 import { useSearchParams } from 'next/navigation'
+import { Search, Filter, ArrowRight } from 'lucide-react'
+import { useAppLocale } from '@/lib/i18n'
+import { formatPrice } from '@/lib/format'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { SiteFooter } from '@/components/site-footer'
 
-interface Service {
+type Service = {
   id: string
   name: string
   category: string
   description: string
   price: number
-  rating: number
-  reviewCount: number
-  provider: string
-  deliveryDays: number
+  image?: string | null
+  defaultDeliveryOption?: {
+    turnaroundDays: number
+  }
 }
 
+const txt = {
+  fr: {
+    title: 'Catalogue des services',
+    subtitle: 'Des livrables standardisés pour lancer vos projets.',
+    search: 'Rechercher...',
+    all: 'Tout voir',
+    empty: 'Aucun service trouvé.',
+    open: 'Configurer',
+    templates: 'Templates',
+    delivery: 'Livraison',
+  },
+  en: {
+    title: 'Service Catalog',
+    subtitle: 'Standardized deliverables to launch your projects.',
+    search: 'Search...',
+    all: 'All',
+    empty: 'No service found.',
+    open: 'Configure',
+    templates: 'Templates',
+    delivery: 'Delivery',
+  },
+} as const
+
+const categories = [
+  { id: 'all', label: 'Tout' },
+  { id: 'cv', label: 'CV & Carrière' },
+  { id: 'portfolio', label: 'Portfolio' },
+  { id: 'graphic-design', label: 'Design' },
+  { id: 'web-dev', label: 'Web' },
+  { id: 'presentation', label: 'Slides' },
+  { id: 'writing', label: 'Rédaction' }
+]
+
 function BrowseContent() {
-  const t = useTranslations('browse')
-
-  const CATEGORIES = [
-    { value: 'all', label: t('allServices') },
-    { value: 'graphic-design', label: t('graphicDesign') },
-    { value: 'templates', label: t('templates') },
-    { value: 'writing', label: t('writing') },
-    { value: 'web-dev', label: t('webDev') },
-  ]
-
-  const PRICE_RANGES = [
-    { label: t('all'), min: 0, max: Infinity },
-    { label: t('under15k'), min: 0, max: 15000 },
-    { label: t('between15kAnd50k'), min: 15000, max: 50000 },
-    { label: t('between50kAnd150k'), min: 50000, max: 150000 },
-    { label: t('over150k'), min: 150000, max: Infinity },
-  ]
-
   const searchParams = useSearchParams()
-  const initialCategory = searchParams.get('category') || 'all'
-
+  const { locale } = useAppLocale()
+  const t = txt[locale]
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
-  const [selectedPriceRange, setSelectedPriceRange] = useState({ min: 0, max: Infinity })
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState(searchParams.get('category') || 'all')
 
+  // Mock data loader (replace with real API call if needed, mimicking the original file's fetch)
   useEffect(() => {
-    const fetchServices = async () => {
+    const run = async () => {
+      setLoading(true)
+      // Simulate API delay
+      await new Promise(r => setTimeout(r, 500)) 
+      // In a real scenario, fetch from /api/services
+      // For now, let's assume the API returns data based on params or use mock data if fetch fails/returns empty
       try {
-        setLoading(true)
-        setError('')
-
-        const params = new URLSearchParams()
-        if (selectedCategory !== 'all') params.append('category', selectedCategory)
-        if (selectedPriceRange.min > 0) params.append('minPrice', String(selectedPriceRange.min))
-        if (selectedPriceRange.max !== Infinity) params.append('maxPrice', String(selectedPriceRange.max))
-        if (searchQuery) params.append('search', searchQuery)
-
-        const response = await fetch(`/api/services?${params.toString()}`)
-        if (!response.ok) throw new Error(t('failedLoad'))
-
-        const data = await response.json()
-        setServices(data.services)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('failedLoad'))
-      } finally {
-        setLoading(false)
+          const params = new URLSearchParams()
+          if (query) params.set('search', query)
+          if (category !== 'all') params.set('category', category)
+          const res = await fetch(`/api/services?${params.toString()}`)
+          const data = await res.json()
+          if(data.services) setServices(data.services)
+          else setServices([]) // Fallback or empty
+      } catch (e) {
+          console.error(e)
+          setServices([])
       }
+      setLoading(false)
     }
+    void run()
+  }, [query, category])
 
-    const timer = setTimeout(fetchServices, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery, selectedCategory, selectedPriceRange, t])
+  const rows = useMemo(() => services, [services])
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent">
-                <span className="text-sm font-bold text-primary-foreground">M</span>
-              </div>
-              <span className="hidden font-bold text-foreground sm:inline">Execly</span>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      {/* Navbar Consistent with others */}
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+             <div className="flex h-5 w-5 items-center justify-center rounded-[4px] bg-primary text-primary-foreground text-xs font-bold">E</div>
+             <span>Execly</span>
+          </Link>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <div className="h-4 w-px bg-border hidden sm:block"></div>
+            <Link href="/dashboard">
+                <Button size="sm" className="h-8 rounded-[6px] text-xs px-3 font-medium">Dashboard</Button>
             </Link>
-            <div className="flex items-center gap-3">
-              <LanguageSwitcher />
-              <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary">Dashboard</Link>
-            </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          <aside className="lg:col-span-1">
-            <div className="space-y-6 rounded-xl border border-border bg-card p-5">
-              <div>
-                <label className="mb-3 block text-sm font-semibold text-foreground">{t('search')}</label>
-                <div className="relative">
-                  <Input type="text" placeholder={t('searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="border-border bg-muted" />
-                  <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
-                </div>
-              </div>
+      <main className="flex-1 mx-auto max-w-6xl px-4 py-12 sm:px-6 w-full">
+        
+        {/* Header */}
+        <div className="mb-10">
+           <h1 className="text-3xl font-bold tracking-tight mb-2">{t.title}</h1>
+           <p className="text-muted-foreground max-w-2xl text-lg">{t.subtitle}</p>
+        </div>
 
-              <div>
-                <label className="mb-3 block text-sm font-semibold text-foreground">{t('category')}</label>
-                <div className="space-y-2">
-                  {CATEGORIES.map((cat) => (
-                    <label key={cat.value} className="flex cursor-pointer items-center gap-2">
-                      <input type="radio" name="category" value={cat.value} checked={selectedCategory === cat.value} onChange={() => setSelectedCategory(cat.value)} className="rounded" />
-                      <span className="text-sm text-foreground/70">{cat.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-3 block text-sm font-semibold text-foreground">{t('priceRange')}</label>
-                <div className="space-y-2">
-                  {PRICE_RANGES.map((range) => (
-                    <label key={range.label} className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="radio"
-                        name="price"
-                        checked={selectedPriceRange.min === range.min && selectedPriceRange.max === range.max}
-                        onChange={() => setSelectedPriceRange({ min: range.min, max: range.max })}
-                        className="rounded"
-                      />
-                      <span className="text-sm text-foreground/70">{range.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+        <div className="grid gap-8 lg:grid-cols-[240px_1fr]">
+          {/* Sidebar Filters */}
+          <aside className="space-y-6">
+            <div className="relative">
+               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+               <Input 
+                 value={query} 
+                 onChange={(e) => setQuery(e.target.value)} 
+                 placeholder={t.search} 
+                 className="pl-9 bg-muted/30 border-transparent hover:border-border focus:bg-background transition-all" 
+               />
+            </div>
+            
+            <div className="space-y-1">
+               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-2">Catégories</p>
+               {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCategory(c.id)}
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                       category === c.id 
+                       ? 'bg-secondary text-secondary-foreground' 
+                       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+               ))}
             </div>
           </aside>
 
-          <div className="lg:col-span-3">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-              <p className="mt-1 text-sm text-foreground/60">{t('servicesFound', { count: services.length })}</p>
-            </div>
-
-            {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
-
+          {/* Grid Content */}
+          <section>
             {loading ? (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse rounded-lg border border-border bg-card p-4">
-                    <div className="mb-4 h-32 rounded bg-muted" />
-                    <div className="mb-2 h-4 rounded bg-muted" />
-                    <div className="h-4 w-2/3 rounded bg-muted" />
-                  </div>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                   <div key={i} className="rounded-xl border bg-card p-0 overflow-hidden space-y-3">
+                      <div className="h-40 bg-muted/20 animate-pulse" />
+                      <div className="p-4 space-y-2">
+                         <div className="h-4 w-2/3 bg-muted/20 rounded animate-pulse" />
+                         <div className="h-4 w-1/3 bg-muted/20 rounded animate-pulse" />
+                      </div>
+                   </div>
                 ))}
               </div>
-            ) : services.length === 0 ? (
-              <div className="py-12 text-center"><p className="text-foreground/60">{t('noServices')}</p></div>
+            ) : rows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center bg-muted/5">
+                 <Filter className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                 <p className="text-muted-foreground font-medium">{t.empty}</p>
+                 <Button variant="link" onClick={() => {setCategory('all'); setQuery('')}} className="mt-2">Réinitialiser les filtres</Button>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {services.map((service, idx) => (
-                  <TiltCard key={service.id}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05, duration: 0.35 }}
-                      whileHover={{ y: -6 }}
-                    >
-                      <Link href={`/service/${service.id}`} className="group block rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-xl hover:shadow-primary/10">
-                        <div className="mb-4 flex h-32 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 text-4xl transition-colors group-hover:from-primary/20 group-hover:to-accent/20">
-                          {service.category === 'graphic-design' && '🎨'}
-                          {service.category === 'templates' && '📄'}
-                          {service.category === 'writing' && '✍️'}
-                          {service.category === 'web-dev' && '💻'}
-                        </div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <Badge variant="outline" className="mb-2 text-xs">{service.category}</Badge>
-                            <h3 className="text-base font-semibold text-foreground transition-colors group-hover:text-primary">{service.name}</h3>
-                            <p className="mt-1 text-sm text-foreground/60">{service.description}</p>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {rows.map((service) => (
+                  <Link key={service.id} href={`/service/${service.id}`} className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-all hover:border-foreground/20 hover:shadow-sm">
+                    <div className="aspect-[4/3] overflow-hidden bg-muted relative">
+                       {service.image ? (
+                          <img
+                            src={service.image}
+                            alt={service.name}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                       ) : (
+                          <div className="h-full w-full flex items-center justify-center bg-muted text-muted-foreground">
+                             No Image
                           </div>
-
-                          <p className="text-sm text-foreground/70">{t('by')} <span className="font-medium">{service.provider}</span></p>
-
-                          <div className="flex items-center justify-between border-t border-border pt-2">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4 fill-accent text-accent" />
-                                <span className="text-sm font-medium text-foreground">{service.rating.toFixed(1)}</span>
-                                <span className="text-xs text-foreground/50">({service.reviewCount})</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-foreground/60">
-                                <Clock className="h-4 w-4" />
-                                <span className="text-sm">{service.deliveryDays}d</span>
-                              </div>
-                            </div>
-                            <div className="text-lg font-bold text-primary">{formatPrice(service.price)}</div>
+                       )}
+                       <div className="absolute top-3 left-3">
+                          <Badge variant="secondary" className="bg-background/90 backdrop-blur text-xs font-medium border-0 shadow-sm">
+                             {service.category}
+                          </Badge>
+                       </div>
+                    </div>
+                    
+                    <div className="flex flex-1 flex-col p-5">
+                       <h3 className="font-semibold tracking-tight text-lg mb-2 group-hover:text-primary transition-colors">{service.name}</h3>
+                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1 leading-relaxed">{service.description}</p>
+                       
+                       <div className="flex items-center justify-between pt-4 border-t mt-auto">
+                          <div className="flex flex-col">
+                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">À partir de</span>
+                             <span className="font-semibold">{formatPrice(service.price)}</span>
                           </div>
-                        </div>
-                      </Link>
-                    </motion.div>
-                  </TiltCard>
+                          <div className="text-right">
+                              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{t.delivery}</span>
+                              <span className="block text-sm font-medium">{service.defaultDeliveryOption?.turnaroundDays || 2} jours</span>
+                          </div>
+                       </div>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </main>
+      <SiteFooter />
     </div>
   )
 }
 
 export default function BrowsePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <BrowseContent />
     </Suspense>
   )
 }
-

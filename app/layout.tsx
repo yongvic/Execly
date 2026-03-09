@@ -1,17 +1,30 @@
 import type { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/next'
+import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google'
 import { AuthProvider } from '@/lib/auth-context'
 import { I18nProvider } from '@/lib/i18n'
 import { cookies } from 'next/headers'
 import './globals.css'
 
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+  display: 'swap',
+})
+
+const grotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-grotesk',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'Execly - Services Digitaux Rapides et Abordables',
-  description: 'Commandez vos services digitaux personnalisés en quelques clics: CV, portfolio, site vitrine, visuels et plus.',
+  title: 'Execly - Services digitaux premium pour étudiants et jeunes professionnels',
+  description: 'CV, portfolio, design, site web, présentations et documents académiques livrés rapidement avec un suivi clair.',
   generator: 'v0.app',
   openGraph: {
     title: 'Execly',
-    description: 'Plateforme SaaS de services digitaux pour étudiants et jeunes professionnels',
+    description: 'Plateforme SaaS premium pour commander des services digitaux personnalisés et suivre ses livraisons.',
     type: 'website',
   },
   icons: {
@@ -43,7 +56,7 @@ export default async function RootLayout({
 
   return (
     <html lang={initialLocale}>
-      <body className="font-sans antialiased">
+      <body className={`${jakarta.variable} ${grotesk.variable} font-sans antialiased`}>
         <I18nProvider initialLocale={initialLocale}>
           <AuthProvider>
             {children}

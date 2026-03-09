@@ -1,335 +1,134 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, Clock, Heart, Share2, Star } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { LanguageSwitcher } from '@/components/language-switcher'
+import { Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useAuth } from '@/lib/auth-context'
+import { Textarea } from '@/components/ui/textarea'
 import { formatPrice } from '@/lib/format'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import { SiteFooter } from '@/components/site-footer'
 
-interface Service {
+type ServiceData = {
   id: string
   name: string
   category: string
   description: string
   longDescription?: string
   price: number
-  rating: number
-  reviewCount: number
-  provider: string
-  providerRating: number
-  deliveryDays: number
-  included?: string[]
-  reviews?: Array<{
-    id: string
-    rating: number
-    comment?: string
-    user: { name: string }
-    createdAt: string
-  }>
+  image?: string | null
+  templates: Array<{ id: string; name: string; description: string; previewImage: string }>
+  deliveryOptions: Array<{ id: string; label: string; turnaroundDays: number; priceMultiplier: number; isDefault: boolean }>
 }
 
-export default function ServiceDetailPage() {
+export default function ServicePage() {
   const params = useParams()
   const router = useRouter()
-  const { user } = useAuth()
-  const t = useTranslations('service')
-  const serviceId = params.id as string
-
-  const [service, setService] = useState<Service | null>(null)
+  const id = params.id as string
+  const [service, setService] = useState<ServiceData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [isFavorited, setIsFavorited] = useState(false)
-  const [isAddingToCart, setIsAddingToCart] = useState(false)
-  const [isExpress, setIsExpress] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [selectedDelivery, setSelectedDelivery] = useState<string | null>(null)
+  const [brief, setBrief] = useState('')
 
   useEffect(() => {
-    const fetchService = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch(`/api/services/${serviceId}`)
-        if (!response.ok) throw new Error(t('failedLoad'))
-        const data = await response.json()
-        setService(data.service)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('failedLoad'))
-      } finally {
-        setLoading(false)
-      }
+    const run = async () => {
+      setLoading(true)
+      const res = await fetch(`/api/services/${id}`)
+      const data = await res.json()
+      setService(data.service || null)
+      const def = data.service?.deliveryOptions?.find((x: any) => x.isDefault) ?? data.service?.deliveryOptions?.[0]
+      setSelectedDelivery(def?.id || null)
+      setSelectedTemplate(data.service?.templates?.[0]?.id || null)
+      setLoading(false)
     }
+    if (id) void run()
+  }, [id])
 
-    if (serviceId) fetchService()
-  }, [serviceId, t])
+  const delivery = useMemo(() => service?.deliveryOptions.find((d) => d.id === selectedDelivery), [service, selectedDelivery])
+  const total = useMemo(() => (service && delivery ? service.price * delivery.priceMultiplier : 0), [service, delivery])
 
-  const handleAddToCart = async () => {
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    try {
-      setIsAddingToCart(true)
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId, quantity: 1 }),
-      })
-
-      if (!response.ok) throw new Error(t('failedAddCart'))
-      router.push(`/checkout?express=${isExpress}`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('failedAddCart'))
-    } finally {
-      setIsAddingToCart(false)
-    }
+  const goCheckout = () => {
+    if (!service || !selectedDelivery) return
+    const payload = encodeURIComponent(JSON.stringify({
+      serviceId: service.id,
+      deliveryOptionId: selectedDelivery,
+      templateId: selectedTemplate,
+      customizationBrief: brief.trim(),
+    }))
+    router.push(`/checkout?draft=${payload}`)
   }
 
-  const handleAddToFavorites = async () => {
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    try {
-      const response = await fetch('/api/favorites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serviceId }),
-      })
-
-      if (response.ok) setIsFavorited(true)
-    } catch {
-      setError(t('failedLoad'))
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="mx-auto max-w-4xl px-4">
-          <div className="space-y-6 animate-pulse">
-            <div className="h-64 rounded-lg bg-muted" />
-            <div className="h-8 w-1/2 rounded bg-muted" />
-            <div className="h-4 w-3/4 rounded bg-muted" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !service) {
-    return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="mx-auto max-w-4xl px-4">
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-            <p className="text-sm text-red-600">{error || t('notFound')}</p>
-          </div>
-          <Link href="/browse" className="mt-4 inline-block text-primary hover:underline">← {t('backToServices')}</Link>
-        </div>
-      </div>
-    )
-  }
-
-  const categoryEmojis: Record<string, string> = {
-    'graphic-design': '🎨',
-    templates: '📄',
-    writing: '✍️',
-    'web-dev': '💻',
-  }
+  if (loading) return <div className="min-h-screen animate-pulse bg-[#faf9f7]" />
+  if (!service) return <div className="min-h-screen bg-[#faf9f7] p-8">Service introuvable.</div>
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/browse" className="text-sm text-primary hover:underline">← {t('backToServices')}</Link>
+    <div className="min-h-screen bg-[#faf9f7] text-[#1f1f1f]">
+      <header className="sticky top-0 z-30 border-b border-black/5 bg-[#faf9f7]/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+          <Link href="/browse" className="text-sm font-medium">← Services</Link>
           <LanguageSwitcher />
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <motion.div className="space-y-6 lg:col-span-2" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex h-64 w-full items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 text-8xl">
-              {categoryEmojis[service.category] || '📦'}
-            </div>
+      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[1fr_360px]">
+        <section className="space-y-5">
+          <div className="overflow-hidden rounded-3xl border border-black/10 bg-white">
+            <img src={service.image || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1600&h=900&fit=crop'} alt={service.name} className="h-72 w-full object-cover" />
+          </div>
 
-            <div>
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="mb-2 text-3xl font-bold text-foreground">{service.name}</h1>
-                  <p className="text-foreground/70">{service.description}</p>
-                </div>
-                <button onClick={handleAddToFavorites} className="shrink-0">
-                  <Heart className={`h-6 w-6 transition-colors ${isFavorited ? 'fill-red-500 text-red-500' : 'text-foreground/60 hover:text-red-500'}`} />
+          <div className="rounded-3xl border border-black/10 bg-white p-5">
+            <p className="text-xs text-black/45">{service.category}</p>
+            <h1 className="mt-1 text-3xl font-semibold">{service.name}</h1>
+            <p className="mt-2 text-black/65">{service.longDescription || service.description}</p>
+          </div>
+
+          <div className="rounded-3xl border border-black/10 bg-white p-5">
+            <h2 className="text-xl font-semibold">Templates disponibles</h2>
+            <p className="mt-1 text-sm text-black/60">Tu sélectionnes une base visuelle. L’équipe Execly personnalise le rendu final.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {service.templates.map((t) => (
+                <button key={t.id} onClick={() => setSelectedTemplate(t.id)} className={`rounded-xl border p-2 text-left ${selectedTemplate === t.id ? 'border-black bg-[#f5f4ef]' : 'border-black/10'}`}>
+                  <img src={t.previewImage} alt={t.name} className="h-28 w-full rounded-lg object-cover" />
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="font-medium">{t.name}</p>
+                    <Lock className="h-3.5 w-3.5 text-black/50" />
+                  </div>
                 </button>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6 border-y border-border py-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-4 w-4 ${i < Math.floor(service.rating) ? 'fill-accent text-accent' : 'text-foreground/20'}`} />
-                    ))}
-                  </div>
-                  <span className="font-semibold text-foreground">{service.rating}</span>
-                  <span className="text-foreground/60">({service.reviewCount} {t('reviews')})</span>
-                </div>
-                <div className="flex items-center gap-2 text-foreground/70">
-                  <Clock className="h-4 w-4" />
-                  <span>{t('dayDelivery', { days: service.deliveryDays })}</span>
-                </div>
-              </div>
+              ))}
             </div>
+          </div>
 
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">{t('overview')}</TabsTrigger>
-                <TabsTrigger value="details">{t('included')}</TabsTrigger>
-                <TabsTrigger value="reviews">{t('customerReviews')}</TabsTrigger>
-              </TabsList>
+          <div className="rounded-3xl border border-black/10 bg-white p-5">
+            <h3 className="text-lg font-semibold">Ton brief</h3>
+            <Textarea value={brief} onChange={(e) => setBrief(e.target.value)} placeholder="Objectif, style, audience, contraintes, deadline..." className="mt-3 min-h-[120px] border-black/10 bg-[#f6f5f1]" />
+          </div>
+        </section>
 
-              <TabsContent value="overview" className="mt-6 space-y-4">
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold text-foreground">{t('aboutService')}</h3>
-                  <p className="leading-relaxed text-foreground/70">{service.longDescription || service.description}</p>
+        <aside className="h-fit rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-20">
+          <h3 className="text-lg font-semibold">Délai & tarif</h3>
+          <div className="mt-3 space-y-2">
+            {service.deliveryOptions.map((d) => (
+              <button key={d.id} onClick={() => setSelectedDelivery(d.id)} className={`w-full rounded-lg border p-3 text-left ${selectedDelivery === d.id ? 'border-black bg-[#f5f4ef]' : 'border-black/10'}`}>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{d.label}</span>
+                  <span className="font-semibold">{formatPrice(service.price * d.priceMultiplier)}</span>
                 </div>
-              </TabsContent>
+                <p className="mt-1 text-xs text-black/55">{d.turnaroundDays} jours</p>
+              </button>
+            ))}
+          </div>
 
-              <TabsContent value="details" className="mt-6 space-y-4">
-                <h3 className="mb-3 text-lg font-semibold text-foreground">{t('included')}</h3>
-                {service.included && service.included.length > 0 ? (
-                  <ul className="space-y-3">
-                    {service.included.map((item, idx) => (
-                      <li key={idx} className="flex items-start gap-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
-                        <span className="text-foreground/70">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-foreground/70">{t('noDetails')}</p>
-                )}
-              </TabsContent>
+          <div className="mt-4 rounded-xl border border-black/10 bg-[#f6f5f1] p-3">
+            <p className="text-xs text-black/55">Total</p>
+            <p className="text-2xl font-semibold">{formatPrice(total)}</p>
+          </div>
 
-              <TabsContent value="reviews" className="mt-6 space-y-6">
-                <h3 className="text-lg font-semibold text-foreground">{t('customerReviews')}</h3>
-                {service.reviews && service.reviews.length > 0 ? (
-                  <div className="space-y-4">
-                    {service.reviews.map((review) => (
-                      <div key={review.id} className="rounded-lg border border-border p-4">
-                        <div className="mb-2 flex items-center justify-between">
-                          <h4 className="font-medium text-foreground">{review.user.name}</h4>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'fill-accent text-accent' : 'text-foreground/20'}`} />
-                            ))}
-                          </div>
-                        </div>
-                        {review.comment && <p className="text-sm text-foreground/70">{review.comment}</p>}
-                        <p className="mt-2 text-xs text-foreground/50">{new Date(review.createdAt).toLocaleDateString()}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-foreground/70">{t('noReviews')}</p>
-                )}
-              </TabsContent>
-            </Tabs>
-
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="mb-3 font-semibold text-foreground">{t('aboutProvider')}</h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-foreground">{service.provider}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-3 w-3 ${i < Math.floor(service.providerRating) ? 'fill-accent text-accent' : 'text-foreground/20'}`} />
-                    ))}
-                    <span className="text-sm text-foreground/70">{service.providerRating}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div className="lg:col-span-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="sticky top-20 space-y-6 rounded-lg border border-border bg-card p-6">
-              <div className="space-y-4">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-foreground/60">{t('price')}</div>
-                    <div className="text-4xl font-bold text-primary">
-                      {formatPrice(isExpress ? service.price * 1.5 : service.price)}
-                    </div>
-                  </div>
-                  {isExpress && (
-                    <Badge className="mb-2 bg-accent text-accent-foreground">{t('express')}</Badge>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/30 p-1">
-                  <button
-                    onClick={() => setIsExpress(false)}
-                    className={`rounded-md py-2 text-xs font-semibold transition-all ${!isExpress ? 'bg-background text-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground'}`}
-                  >
-                    {t('standard')}
-                  </button>
-                  <button
-                    onClick={() => setIsExpress(true)}
-                    className={`rounded-md py-2 text-xs font-semibold transition-all ${isExpress ? 'bg-accent text-accent-foreground shadow-sm' : 'text-foreground/50 hover:text-foreground'}`}
-                  >
-                    {t('expressExtra')}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2 text-sm text-foreground/60">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {t('deliveryInDays', {
-                      days: isExpress
-                        ? Math.max(1, Math.floor(service.deliveryDays / 2))
-                        : service.deliveryDays
-                    })}
-                  </span>
-                </div>
-              </div>
-
-              <Button onClick={handleAddToCart} disabled={isAddingToCart} className="w-full" size="lg">
-                {isAddingToCart ? t('adding') : t('addToCart')}
-              </Button>
-
-              <Button variant="outline" className="w-full" size="lg">
-                <Share2 className="mr-2 h-4 w-4" />
-                {t('share')}
-              </Button>
-
-              <div className="space-y-3 border-t border-border pt-4">
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
-                  <div className="text-sm">
-                    <p className="font-medium text-foreground">{t('qualityGuaranteed')}</p>
-                    <p className="text-foreground/60">{t('qualityDescription')}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent" />
-                  <div className="text-sm">
-                    <p className="font-medium text-foreground">{t('verifiedProvider')}</p>
-                    <p className="text-foreground/60">{t('trustedByThousands')}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+          <Button onClick={goCheckout} className="mt-4 w-full bg-[#111] text-white hover:bg-black">Continuer vers paiement</Button>
+        </aside>
       </main>
+      <SiteFooter />
     </div>
   )
 }

@@ -1,0 +1,7 @@
+-- Execly v2 baseline migration placeholder.
+-- Unable to auto-generate SQL in this environment due local EPERM on Prisma schema-engine.
+-- Apply schema with:
+-- 1) npm exec prisma generate
+-- 2) npm exec prisma db push
+-- Then regenerate this migration SQL locally with:
+-- prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script

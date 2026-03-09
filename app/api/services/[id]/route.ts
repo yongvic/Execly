@@ -11,6 +11,13 @@ export async function GET(
     const service = await prisma.service.findUnique({
       where: { id },
       include: {
+        deliveryOptions: {
+          orderBy: { turnaroundDays: 'asc' },
+        },
+        templates: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        },
         reviews: {
           include: {
             user: {

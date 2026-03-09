@@ -36,6 +36,12 @@ Choose where to start based on what you need:
 - Detailed feature list
 - Design system information
 
+### 3. **DEPLOY_VERCEL.md** - Production Deploy
+- Full Vercel deployment checklist
+- Required environment variables
+- Payments webhook setup
+- Realtime and Blob verification
+
 ---
 
 ## 🚀 Quick Start (2 Minutes)
@@ -47,6 +53,26 @@ npx prisma generate
 npx prisma db push
 npm run db:seed
 ```
+
+### Execly v2 Variables
+Copy `.env.example` to `.env` and fill at least:
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `FLOOZ_API_URL`, `FLOOZ_API_TOKEN`
+- `TMONEY_API_URL`, `TMONEY_API_TOKEN`
+- `PAYMENT_WEBHOOK_SECRET`
+- `BLOB_READ_WRITE_TOKEN`
+
+Optional real-time:
+- Preferred managed real-time (Pusher):
+  - `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`
+  - `NEXT_PUBLIC_PUSHER_KEY`, `NEXT_PUBLIC_PUSHER_CLUSTER`
+- Fallback custom WebSocket:
+  - `NEXT_PUBLIC_WS_URL` (if empty, UI falls back to polling).
+
+Optional notifications:
+- `RESEND_API_KEY`, `RESEND_FROM_EMAIL` for transactional emails
+- `WHATSAPP_API_URL`, `WHATSAPP_API_TOKEN` for WhatsApp notifications
 
 ### Run Development Server
 ```bash
@@ -167,6 +193,15 @@ Execly/
 
 ### Database Issues (Neon/PostgreSQL)
 Ensure your `.env` contains a valid `DATABASE_URL`. If you encounter Prisma engine locks on Windows during migrations, temporarily stop the Next.js development server (`npm run dev`), run `npx prisma db push`, and restart.
+
+If PowerShell blocks `npm` scripts, use `npm.cmd` instead (for example: `npm.cmd run dev`).
+
+If you hit Prisma `spawn EPERM` on Windows:
+1. Close running Node/Next processes.
+2. Run terminal as Administrator.
+3. Run `npx prisma generate`.
+4. Run `npx prisma db push --accept-data-loss`.
+5. Run `npm run db:seed`.
 
 ### Port Already in Use
 ```bash

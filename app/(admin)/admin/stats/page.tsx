@@ -1,129 +1,78 @@
-import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { TrendingUp, Users, Activity, ExternalLink } from 'lucide-react'
-import { Overview } from '@/components/admin/overview-chart'
-import { formatPrice } from '@/lib/format'
 import { prisma } from '@/lib/prisma'
+import { formatPrice } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
-function monthlyOrderSeries(orders: Array<{ createdAt: Date; totalPrice: number }>) {
-  const months = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec']
-  const totals = new Array(12).fill(0)
-  orders.forEach((order) => {
-    totals[new Date(order.createdAt).getMonth()] += order.totalPrice
-  })
-  return months.map((name, i) => ({ name, total: Math.round(totals[i]) }))
+function pct(numerator: number, denominator: number) {
+  if (!denominator) return 0
+  return Math.round((numerator / denominator) * 1000) / 10
 }
 
 export default async function AdminStatsPage() {
-  const [orders, userCount, topServices] = await Promise.all([
-    prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: { select: { id: true } },
-        service: { select: { id: true, name: true, provider: true } },
-      },
-    }),
-    prisma.user.count(),
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
+  const [orders, payments, services, landingViews, ctaClicks, checkoutClicks, paidEvents] = await Promise.all([
+    prisma.order.findMany({ where: { createdAt: { gte: since } } }),
+    prisma.payment.findMany({ where: { createdAt: { gte: since } } }),
     prisma.service.findMany({
-      take: 5,
-      include: {
-        _count: { select: { orders: true } },
-        orders: { select: { totalPrice: true } },
-      },
+      include: { _count: { select: { orders: true } }, orders: { select: { totalPrice: true } } },
       orderBy: { orders: { _count: 'desc' } },
+      take: 8,
     }),
+    prisma.analyticsEvent.count({ where: { name: 'landing_view', createdAt: { gte: since } } }),
+    prisma.analyticsEvent.count({ where: { name: 'landing_cta_click', createdAt: { gte: since } } }),
+    prisma.analyticsEvent.count({ where: { name: 'checkout_pay_click', createdAt: { gte: since } } }),
+    prisma.analyticsEvent.count({ where: { name: 'checkout_paid', createdAt: { gte: since } } }),
   ])
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0)
-  const completedOrders = orders.filter((order) => order.status === 'completed').length
-  const conversionRate = orders.length ? Math.round((completedOrders / orders.length) * 1000) / 10 : 0
-  const repeatCustomers = new Set(orders.map((o) => o.user.id)).size
+  const revenue = orders.reduce((s, o) => s + o.totalPrice, 0)
+  const completed = orders.filter((o) => o.status === 'COMPLETED').length
+  const otpPending = payments.filter((p) => p.status === 'OTP_SENT').length
+  const paidConversion = pct(paidEvents, checkoutClicks)
+  const landingConversion = pct(ctaClicks, landingViews)
+  const completionRate = pct(completed, orders.length)
 
   return (
-    <div className="flex-1 space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Statistiques Détaillées</h2>
-          <p className="text-muted-foreground mt-1">Analysez les performances globales de la plateforme Execly.</p>
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="text-3xl font-bold tracking-tight">Statistiques</h2>
+        <p className="mt-1 text-sm text-muted-foreground">KPI business sur les 30 derniers jours.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Revenus 30j</p><p className="text-2xl font-semibold">{formatPrice(revenue)}</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Completion commandes</p><p className="text-2xl font-semibold">{completionRate}%</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">OTP en attente</p><p className="text-2xl font-semibold">{otpPending}</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-xs text-slate-500">Paid / Checkout</p><p className="text-2xl font-semibold">{paidConversion}%</p></div>
+      </div>
+
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-lg font-semibold">Funnel 30j</h3>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs text-slate-500">Landing views</p><p className="text-xl font-semibold">{landingViews}</p></div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs text-slate-500">CTA clicks</p><p className="text-xl font-semibold">{ctaClicks}</p><p className="text-xs text-emerald-600">{landingConversion}%</p></div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs text-slate-500">Checkout clicks</p><p className="text-xl font-semibold">{checkoutClicks}</p></div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-xs text-slate-500">Paid events</p><p className="text-xl font-semibold">{paidEvents}</p><p className="text-xs text-emerald-600">{paidConversion}%</p></div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="rounded-2xl border-none shadow-sm bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taux de finalisation</CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{conversionRate}%</div>
-            <p className="text-xs text-muted-foreground mt-1 text-emerald-500">{completedOrders} commandes finalisées</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-none shadow-sm bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenus cumulés</CardTitle>
-            <Activity className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatPrice(totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground mt-1 text-emerald-500">{orders.length} commandes</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-none shadow-sm bg-background">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs actifs</CardTitle>
-            <Users className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{repeatCustomers}</div>
-            <p className="text-xs text-muted-foreground mt-1">{userCount} comptes au total</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-        <Card className="rounded-2xl border-none shadow-sm bg-background">
-          <CardHeader>
-            <CardTitle>Ventes mensuelles</CardTitle>
-            <CardDescription>Évolution des revenus sur l'année</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <Overview data={monthlyOrderSeries(orders)} />
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-none shadow-sm bg-background">
-          <CardHeader>
-            <CardTitle>Top Services (Ventes)</CardTitle>
-            <CardDescription>Les services les plus performants</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {topServices.map((service, index) => {
-                const serviceRevenue = service.orders.reduce((sum, order) => sum + order.totalPrice, 0)
-                return (
-                  <div key={service.id} className="flex items-center">
-                    <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center font-bold text-primary mr-4">
-                      #{index + 1}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">{service.name}</p>
-                      <p className="text-xs text-muted-foreground">{service.provider}</p>
-                    </div>
-                    <div className="text-sm font-medium">{formatPrice(serviceRevenue)}</div>
-                  </div>
-                )
-              })}
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-lg font-semibold">Top services (30j)</h3>
+        <div className="mt-3 space-y-2">
+          {services.map((service, idx) => (
+            <div key={service.id} className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-sm">
+              <div>
+                <p className="font-medium">#{idx + 1} {service.name}</p>
+                <p className="text-xs text-slate-500">{service.category}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold">{service._count.orders} commandes</p>
+                <p className="text-xs text-slate-500">{formatPrice(service.orders.reduce((s, o) => s + o.totalPrice, 0))}</p>
+              </div>
             </div>
-            <button className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-primary hover:underline">
-              Classement en temps réel <ExternalLink className="h-3 w-3" />
-            </button>
-          </CardContent>
-        </Card>
+          ))}
+          {services.length === 0 && <p className="text-sm text-slate-500">Aucune donnée.</p>}
+        </div>
       </div>
     </div>
   )

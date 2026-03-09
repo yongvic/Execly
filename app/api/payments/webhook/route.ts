@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    const orderStatus = status === 'CONFIRMED' ? 'confirmed' : status === 'FAILED' ? 'cancelled' : 'pending'
+    const orderStatus = status === 'CONFIRMED' ? 'CONFIRMED' : status === 'FAILED' ? 'CANCELLED' : 'PENDING'
     await prisma.order.updateMany({
       where: { paymentId: payment.id },
       data: { status: orderStatus },

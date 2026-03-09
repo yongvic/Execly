@@ -5,7 +5,7 @@ import { getSession } from '@/lib/session'
 import { z } from 'zod'
 
 const updateOrderSchema = z.object({
-  status: z.enum(['pending', 'confirmed', 'in-progress', 'completed', 'cancelled']),
+  status: z.enum(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
 })
 const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN', 'MODERATOR'])
 
@@ -29,6 +29,7 @@ export async function GET(
       where: { id },
       include: {
         service: true,
+        template: true,
         review: true,
       },
     })
@@ -102,7 +103,7 @@ export async function PUT(
       data: {
         status,
       },
-      include: { service: true },
+      include: { service: true, template: true },
     })
 
     return NextResponse.json(

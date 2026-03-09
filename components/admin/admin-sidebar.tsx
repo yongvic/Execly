@@ -6,18 +6,19 @@ import { usePathname } from 'next/navigation'
 import {
     LayoutDashboard,
     Users,
-    Briefcase,
     Settings,
     ShieldAlert,
     BarChart3,
     LogOut,
-    FolderOpen
+    FolderOpen,
+    ShoppingCart
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 
 const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Commandes', href: '/admin/orders', icon: ShoppingCart },
     { name: 'Utilisateurs', href: '/admin/users', icon: Users },
     { name: 'Contenus & Services', href: '/admin/services', icon: FolderOpen },
     { name: 'Statistiques', href: '/admin/stats', icon: BarChart3 },
@@ -30,19 +31,19 @@ export function AdminSidebar() {
     const { logout } = useAuth()
 
     return (
-        <div className="flex h-full w-64 flex-col bg-background border-r shadow-sm">
+        <div className="flex h-full w-64 flex-col bg-sidebar border-r border-sidebar-border">
             {/* Logo Area */}
-            <div className="flex h-16 shrink-0 items-center px-6">
-                <Link href="/admin/dashboard" className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
-                        M
+            <div className="flex h-14 shrink-0 items-center px-4 border-b border-sidebar-border/50">
+                <Link href="/admin/dashboard" className="flex items-center gap-2 hover:bg-sidebar-accent/50 rounded-md py-1 px-2 transition-colors">
+                    <div className="flex h-5 w-5 items-center justify-center rounded-[4px] bg-sidebar-primary text-sidebar-primary-foreground text-xs font-bold">
+                        E
                     </div>
-                    <span className="text-xl font-bold tracking-tight">Execly <span className="text-primary">Admin</span></span>
+                    <span className="text-sm font-semibold text-sidebar-foreground">Execly Admin</span>
                 </Link>
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-1 flex-col overflow-y-auto mt-4 px-3 gap-1">
+            <nav className="flex flex-1 flex-col overflow-y-auto mt-2 px-2 gap-0.5">
                 {navigation.map((item) => {
                     const isActive = pathname.startsWith(item.href)
                     return (
@@ -50,35 +51,32 @@ export function AdminSidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                'group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                                'group flex items-center gap-2.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors',
                                 isActive
-                                    ? 'bg-primary/10 text-primary shadow-sm'
-                                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                             )}
                         >
                             <item.icon
                                 className={cn(
-                                    'h-5 w-5 shrink-0 transition-colors',
-                                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-accent-foreground'
+                                    'h-4 w-4 shrink-0',
+                                    isActive ? 'text-sidebar-accent-foreground' : 'text-sidebar-foreground/50'
                                 )}
                                 aria-hidden="true"
                             />
                             {item.name}
-                            {isActive && (
-                                <div className="ml-auto w-1 h-5 bg-primary rounded-full transition-all" />
-                            )}
                         </Link>
                     )
                 })}
             </nav>
 
             {/* Footer Area */}
-            <div className="p-4 mt-auto">
+            <div className="p-2 mt-auto border-t border-sidebar-border/50">
                 <button
                     onClick={logout}
-                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+                    className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-1.5 text-sm font-medium text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 >
-                    <LogOut className="h-5 w-5 shrink-0" />
+                    <LogOut className="h-4 w-4 shrink-0 text-sidebar-foreground/50" />
                     Déconnexion
                 </button>
             </div>

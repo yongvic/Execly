@@ -1,371 +1,371 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { AlertCircle, Check, ChevronLeft, Trash2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { LanguageSwitcher } from '@/components/language-switcher'
+import { AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { useAuth } from '@/lib/auth-context'
+import { trackEvent } from '@/lib/analytics'
 import { formatPrice } from '@/lib/format'
+import { useAppLocale } from '@/lib/i18n'
+import { SiteFooter } from '@/components/site-footer'
 
-interface CartItem {
+type DraftItem = {
+  serviceId: string
+  deliveryOptionId?: string
+  templateId?: string | null
+  customizationBrief?: string
+}
+
+type CartItem = {
   id: string
-  service: {
-    id: string
-    name: string
-    price: number
-    category: string
-  }
+  service: { id: string; name: string; price: number }
   quantity: number
 }
 
-function CheckoutStepper({
-  activeStep,
-  labels,
-}: {
-  activeStep: 'cart' | 'payment' | 'confirmation'
-  labels: { cart: string; payment: string; confirmation: string }
-}) {
-  const steps: Array<'cart' | 'payment' | 'confirmation'> = ['cart', 'payment', 'confirmation']
-  const currentIndex = steps.indexOf(activeStep)
-
-  return (
-    <div className="mb-8">
-      <div className="grid grid-cols-3 gap-3">
-        {steps.map((step, index) => (
-          <div key={step} className="space-y-2">
-            <div className={`h-2 rounded-full transition-all ${index <= currentIndex ? 'bg-primary' : 'bg-muted'}`} />
-            <p className={`text-xs font-medium ${index <= currentIndex ? 'text-foreground' : 'text-foreground/50'}`}>
-              {labels[step]}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+const i18n = {
+  fr: {
+    title: 'Validation finale',
+    subtitle: 'Une dernière étape et ta commande entre en production premium.',
+    summary: 'Recapitulatif',
+    phone: 'Numero de telephone',
+    note: 'Brief (optionnel)',
+    pay: 'Payer maintenant',
+    success: 'Commande creee avec succes',
+    pending: 'Paiement en attente de confirmation USSD',
+    orderHistory: 'Voir mes commandes',
+  },
+  en: {
+    title: 'Final validation',
+    subtitle: 'One last step before your order enters premium production.',
+    summary: 'Summary',
+    phone: 'Phone number',
+    note: 'Brief (optional)',
+    pay: 'Pay now',
+    success: 'Order created successfully',
+    pending: 'Payment pending USSD confirmation',
+    orderHistory: 'View my orders',
+  },
+} as const
 
 function CheckoutContent() {
+  const { user } = useAuth()
+  const { locale } = useAppLocale()
+  const t = i18n[locale]
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuth()
-  const t = useTranslations('checkout')
-  const isExpressParam = searchParams.get('express') === 'true'
 
-  const [activeStep, setActiveStep] = useState<'cart' | 'payment' | 'confirmation'>('cart')
   const [cartItems, setCartItems] = useState<CartItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [promoCode, setPromoCode] = useState('')
-  const [discount, setDiscount] = useState(0)
+  const [draftItem, setDraftItem] = useState<DraftItem | null>(null)
+  const [phone, setPhone] = useState(user?.phone || '')
+  const [brief, setBrief] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'flooz' | 'tmoney'>('flooz')
-  const [formData, setFormData] = useState({ phone: '', name: '' })
-  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'CONFIRMED' | 'FAILED' | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState(false)
+  const [draftPreview, setDraftPreview] = useState<{ name: string; total: number } | null>(null)
+  const [error, setError] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState<'PENDING' | 'OTP_SENT' | 'CONFIRMED' | 'FAILED' | null>(null)
+  const [paymentId, setPaymentId] = useState<string | null>(null)
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpHint, setOtpHint] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user && !loading) router.push('/login')
-  }, [user, router, loading])
+    if (!user) router.push('/login')
+  }, [router, user])
 
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/cart')
-        if (!response.ok) throw new Error(t('failedLoadCart'))
-        const data = await response.json()
-        setCartItems(data.items)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t('failedLoadCart'))
-      } finally {
-        setLoading(false)
+    if (user?.phone && !phone) {
+      setPhone(user.phone)
+    }
+  }, [user, phone])
+
+  useEffect(() => {
+    if (!paymentStatus) return
+    void trackEvent('checkout_payment_status', { status: paymentStatus })
+    if (paymentStatus === 'CONFIRMED') {
+      void trackEvent('checkout_paid', { method: paymentMethod })
+    }
+  }, [paymentStatus])
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      const encoded = searchParams.get('draft')
+      if (encoded) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(encoded)) as DraftItem
+          setDraftItem(parsed)
+          setBrief(parsed.customizationBrief || '')
+          const previewRes = await fetch(`/api/services/${parsed.serviceId}`)
+          if (previewRes.ok) {
+            const previewData = await previewRes.json()
+            const selected =
+              previewData.service?.deliveryOptions?.find((option: any) => option.id === parsed.deliveryOptionId) ??
+              previewData.service?.deliveryOptions?.find((option: any) => option.isDefault) ??
+              previewData.service?.deliveryOptions?.[0]
+            if (previewData.service && selected) {
+              setDraftPreview({
+                name: previewData.service.name,
+                total: previewData.service.price * selected.priceMultiplier,
+              })
+            }
+          }
+          setLoading(false)
+          return
+        } catch {
+          setError('Invalid checkout draft')
+        }
       }
+
+      const res = await fetch('/api/cart')
+      if (res.ok) {
+        const data = await res.json()
+        setCartItems(data.items || [])
+      }
+      setLoading(false)
     }
 
-    if (user) fetchCart()
-  }, [user, t])
+    bootstrap()
+  }, [searchParams])
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    const basePrice = item.service.price * item.quantity;
-    return sum + (isExpressParam ? basePrice * 1.5 : basePrice);
-  }, 0)
-  const discountAmount = (subtotal * discount) / 100
-  const total = subtotal - discountAmount
+  const fallbackTotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.service.price * item.quantity, 0),
+    [cartItems]
+  )
 
-  const handleRemoveItem = async (cartItemId: string) => {
-    try {
-      const response = await fetch(`/api/cart/${cartItemId}`, { method: 'DELETE' })
-      if (response.ok) setCartItems(cartItems.filter((item) => item.id !== cartItemId))
-    } catch {
-      setError(t('failedLoadCart'))
-    }
-  }
-
-  const handleApplyPromo = () => {
-    if (promoCode.toUpperCase() === 'SAVE10') {
-      setDiscount(10)
-      setError('')
-    } else if (promoCode.toUpperCase() === 'SAVE20') {
-      setDiscount(20)
-      setError('')
-    } else {
-      setError(t('invalidPromo'))
-    }
-  }
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitOrder = async () => {
     setError('')
-    setIsProcessing(true)
-
+    setProcessing(true)
+    void trackEvent('checkout_pay_click', {
+      method: paymentMethod,
+      mode: draftItem ? 'single' : 'cart',
+    })
     try {
-      if (!formData.phone) {
-        throw new Error(t('enterPhoneNumber'))
+      let items: Array<{ serviceId: string; quantity: number; deliveryOptionId?: string; templateId?: string | null; customizationBrief?: string }>
+
+      if (draftItem) {
+        items = [
+          {
+            serviceId: draftItem.serviceId,
+            quantity: 1,
+            deliveryOptionId: draftItem.deliveryOptionId,
+            templateId: draftItem.templateId,
+            customizationBrief: brief || draftItem.customizationBrief,
+          },
+        ]
+      } else {
+        items = cartItems.map((item) => ({
+          serviceId: item.service.id,
+          quantity: item.quantity,
+          customizationBrief: brief || undefined,
+        }))
       }
 
-      const items = cartItems.map((item) => ({
-        serviceId: item.service.id,
-        quantity: item.quantity,
-        isExpress: isExpressParam
-      }))
-
-      const response = await fetch('/api/orders', {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, paymentMethod, phone: formData.phone }),
+        body: JSON.stringify({
+          items,
+          paymentMethod,
+          phone,
+        }),
       })
-
-      if (!response.ok) throw new Error(t('failedOrder'))
-      const data = await response.json()
-
-      setCartItems([])
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Checkout failed')
       setPaymentStatus(data.paymentStatus || 'PENDING')
-      setActiveStep('confirmation')
+      if (data.paymentId) setPaymentId(data.paymentId)
+      if (data.otpHint) setOtpHint(data.otpHint)
+      if (data.paymentStatus === 'OTP_SENT') {
+        setOtpSent(true)
+        setPaymentStatus(null)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : (err as any).message || t('paymentFailed'))
+      setError(err instanceof Error ? err.message : 'Checkout failed')
     } finally {
-      setIsProcessing(false)
+      setProcessing(false)
     }
   }
 
-  if (!user && !loading) return null
+  const confirmOtp = async () => {
+    if (!paymentId) return
+    setProcessing(true)
+    setError('')
+    try {
+      const baseItems = draftItem
+        ? [{
+            serviceId: draftItem.serviceId,
+            quantity: 1,
+            deliveryOptionId: draftItem.deliveryOptionId,
+            templateId: draftItem.templateId,
+            customizationBrief: brief || draftItem.customizationBrief,
+          }]
+        : cartItems.map((item) => ({
+            serviceId: item.service.id,
+            quantity: item.quantity,
+            customizationBrief: brief || undefined,
+          }))
 
-  if (activeStep === 'cart') {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: baseItems,
+          paymentMethod,
+          phone,
+          paymentId,
+          otpCode,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'OTP confirmation failed')
+      setPaymentStatus(data.paymentStatus || 'CONFIRMED')
+      setOtpSent(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'OTP confirmation failed')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="min-h-screen animate-pulse bg-muted/30" />
+  }
+
+  if (paymentStatus) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <Link href="/browse" className="flex w-fit items-center gap-2 text-sm text-primary hover:underline">
-              <ChevronLeft className="h-4 w-4" />
-              {t('backToShopping')}
-            </Link>
-            <LanguageSwitcher />
+      <div className="flex min-h-screen items-center justify-center bg-[#faf9f7] p-4">
+        <div className="w-full max-w-lg rounded-2xl border border-black/10 bg-white p-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
           </div>
-        </header>
+          <h1 className="text-2xl font-semibold">{paymentStatus === 'CONFIRMED' ? t.success : t.pending}</h1>
+          <p className="mt-2 text-foreground/70">Status: {paymentStatus}</p>
+          <div className="mt-6">
+            <Link href="/dashboard">
+              <Button>{t.orderHistory}</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <CheckoutStepper
-            activeStep={activeStep}
-            labels={{ cart: t('yourCart'), payment: t('paymentDetails'), confirmation: t('orderConfirmed') }}
-          />
-          <h1 className="mb-8 text-3xl font-bold text-foreground">{t('yourCart')}</h1>
+  return (
+    <div className="min-h-screen bg-[#faf9f7] text-[#1f1f1f]">
+      <header className="border-b border-black/5 bg-[#faf9f7]/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+          <Link href="/browse" className="text-sm font-medium text-black/70">← Back</Link>
+          <LanguageSwitcher />
+        </div>
+      </header>
 
-          {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-              <p className="text-sm text-red-600">{error}</p>
+      <main className="mx-auto max-w-6xl px-4 py-8">
+        <div className="rounded-3xl border border-black/10 bg-white p-6">
+          <h1 className="text-3xl font-semibold">{t.title}</h1>
+          <p className="mt-2 text-black/60">{t.subtitle}</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            <span className="rounded-full bg-[#f1f0ed] px-3 py-1 text-black/70">1. Service configuration</span>
+            <span className="rounded-full bg-[#f1f0ed] px-3 py-1 text-black/70">2. Payment</span>
+            <span className="rounded-full bg-[#f1f0ed] px-3 py-1 text-black/70">3. Confirmation</span>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle className="mt-0.5 h-4 w-4" /> {error}
+          </div>
+        )}
+
+        <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_360px]">
+          <section className="space-y-5 rounded-3xl border border-black/10 bg-white p-5">
+            <div>
+              <label className="text-sm font-medium">{t.phone}</label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+228 90 00 00 00" className="mt-2 h-11 border-black/10 bg-[#f6f5f1]" />
             </div>
-          )}
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-            <div className="space-y-4 lg:col-span-2">
-              {loading ? (
-                <div className="space-y-3">{[...Array(2)].map((_, i) => <div key={i} className="h-24 animate-pulse rounded-lg bg-muted" />)}</div>
-              ) : cartItems.length === 0 ? (
-                <div className="rounded-lg border border-border bg-card/50 py-12 text-center">
-                  <p className="mb-4 text-foreground/60">{t('yourCartEmpty')}</p>
-                  <Link href="/browse"><Button>{t('continueShopping')}</Button></Link>
+            <div>
+              <label className="text-sm font-medium">Mode de paiement</label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button onClick={() => setPaymentMethod('flooz')} className={`rounded-lg border p-3 ${paymentMethod === 'flooz' ? 'border-black bg-[#f5f4ef]' : 'border-black/10'}`}>Flooz</button>
+                <button onClick={() => setPaymentMethod('tmoney')} className={`rounded-lg border p-3 ${paymentMethod === 'tmoney' ? 'border-black bg-[#f5f4ef]' : 'border-black/10'}`}>TMoney</button>
+              </div>
+            </div>
+
+            {otpSent && (
+              <div>
+                <label className="text-sm font-medium">Code OTP</label>
+                <Input
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="6 chiffres"
+                  className="mt-2 h-11 border-black/10 bg-[#f6f5f1]"
+                />
+                <p className="mt-1 text-xs text-foreground/60">
+                  Un code est envoye sur ton telephone. {otpHint ? `(test: ${otpHint})` : ''}
+                </p>
+                <Button
+                  type="button"
+                  onClick={confirmOtp}
+                  disabled={processing || otpCode.trim().length !== 6}
+                  className="mt-3 w-full"
+                >
+                  {processing ? 'Verification...' : 'Confirmer OTP'}
+                </Button>
+              </div>
+            )}
+
+            <div>
+              <label className="text-sm font-medium">{t.note}</label>
+              <Textarea value={brief} onChange={(e) => setBrief(e.target.value)} className="mt-2 min-h-[100px] border-black/10 bg-[#f6f5f1]" />
+            </div>
+          </section>
+
+          <aside className="h-fit rounded-3xl border border-black/10 bg-white p-5 lg:sticky lg:top-8">
+            <h2 className="text-lg font-semibold">{t.summary}</h2>
+            <div className="mt-3 space-y-2 text-sm text-foreground/70">
+              {draftItem ? (
+                <div className="flex justify-between">
+                  <span>{draftPreview?.name || '1 service configure'}</span>
+                  <span>{formatPrice(draftPreview?.total || 0)}</span>
                 </div>
               ) : (
-                cartItems.map((item, idx) => (
-                  <motion.div key={item.id} className="rounded-lg border border-border bg-card p-4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex flex-1 items-start gap-4">
-                        <div className="text-2xl">
-                          {item.service.category === 'graphic-design' && '🎨'}
-                          {item.service.category === 'templates' && '📄'}
-                          {item.service.category === 'writing' && '✍️'}
-                          {item.service.category === 'web-dev' && '💻'}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-foreground">{item.service.name}</h3>
-                          <p className="text-sm text-foreground/60">{t('quantity', { qty: item.quantity })}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="mb-3 font-bold text-primary">
-                          {formatPrice((isExpressParam ? item.service.price * 1.5 : item.service.price) * item.quantity)}
-                        </p>
-                        <button onClick={() => handleRemoveItem(item.id)} className="text-foreground/40 transition-colors hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </div>
-                  </motion.div>
+                cartItems.map((item) => (
+                  <div key={item.id} className="flex justify-between">
+                    <span>{item.service.name}</span>
+                    <span>{formatPrice(item.service.price * item.quantity)}</span>
+                  </div>
                 ))
               )}
             </div>
-
-            <div className="lg:col-span-1">
-              <div className="sticky top-20 space-y-6 rounded-lg border border-border bg-card p-6">
-                <h2 className="text-xl font-semibold text-foreground">{t('orderSummary')}</h2>
-
-                <div className="space-y-3 border-b border-border pb-4">
-                  <div className="flex justify-between text-foreground/70"><span>{t('subtotal')}</span><span>{formatPrice(subtotal)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-{formatPrice(discountAmount)}</span></div>}
-                </div>
-
-                <div className="flex justify-between text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">{formatPrice(total)}</span></div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">{t('promoCode')}</label>
-                  <div className="flex gap-2">
-                    <Input placeholder={t('enterCode')} value={promoCode} onChange={(e) => setPromoCode(e.target.value)} name="promo" className="border-border bg-muted" />
-                    <Button variant="outline" onClick={handleApplyPromo} className="px-3">{t('apply')}</Button>
-                  </div>
-                </div>
-
-                <Button onClick={() => setActiveStep('payment')} disabled={cartItems.length === 0} className="w-full" size="lg">{t('proceedPayment')}</Button>
-                <p className="text-center text-xs text-foreground/50">{t('promoHint')}</p>
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (activeStep === 'payment') {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <button onClick={() => setActiveStep('cart')} className="flex items-center gap-2 text-sm text-primary hover:underline">
-              <ChevronLeft className="h-4 w-4" />
-              {t('backToCart')}
-            </button>
-            <LanguageSwitcher />
-          </div>
-        </header>
-
-        <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
-          <CheckoutStepper
-            activeStep={activeStep}
-            labels={{ cart: t('yourCart'), payment: t('paymentDetails'), confirmation: t('orderConfirmed') }}
-          />
-          <h1 className="mb-8 text-3xl font-bold text-foreground">{t('paymentDetails')}</h1>
-
-          {error && <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /><p className="text-sm text-red-600">{error}</p></div>}
-
-          <form onSubmit={handlePayment} className="space-y-6">
-            <div className="space-y-6 rounded-lg border border-border bg-card p-6">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground">{t('selectPaymentMethod')}</h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('flooz')}
-                  className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-4 transition-all ${paymentMethod === 'flooz' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#FFD700] text-xl font-bold text-black italic">F</div>
-                  <span className="text-sm font-bold">Flooz</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('tmoney')}
-                  className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 p-4 transition-all ${paymentMethod === 'tmoney' ? 'border-primary bg-primary/5' : 'border-border'}`}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EE1C25] text-xl font-bold text-white italic">T</div>
-                  <span className="text-sm font-bold">TMoney</span>
-                </button>
-              </div>
-
-              <div className="space-y-4 pt-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">{t('phoneNumber')}</label>
-                  <Input
-                    name="phone"
-                    placeholder={t('phonePlaceholder')}
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                    required
-                    className="border-border bg-muted text-lg font-bold tracking-widest"
-                  />
-                  <p className="mt-2 text-xs text-foreground/50">{t('ussdNote')}</p>
-                </div>
+            <div className="mt-4 border-t border-border pt-4">
+              <div className="flex justify-between text-sm">
+                <span>Total</span>
+                <span className="font-semibold">{formatPrice(draftItem ? draftPreview?.total || 0 : fallbackTotal)}</span>
               </div>
             </div>
 
-            <div className="rounded-lg border border-border bg-card/50 p-6">
-              <div className="mb-4 space-y-2">
-                <div className="flex justify-between"><span className="text-foreground/70">{t('subtotal')}</span><span>{formatPrice(subtotal)}</span></div>
-                {discount > 0 && <div className="flex justify-between text-green-600"><span>{t('discount', { discount })}</span><span>-{formatPrice(discountAmount)}</span></div>}
-              </div>
-              <div className="flex justify-between border-t border-border pt-4 text-lg font-bold text-foreground"><span>{t('total')}</span><span className="text-primary">{formatPrice(total)}</span></div>
+            <div className="mt-4 rounded-xl border border-black/10 bg-[#f6f5f1] p-3 text-xs text-black/65">
+              <span className="inline-flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Payment confirmation via secure mobile network.</span>
             </div>
 
-            <Button type="submit" disabled={isProcessing} className="w-full" size="lg">
-              {isProcessing ? t('initializingUssd') : t('payWithMethod', { amount: formatPrice(total), method: paymentMethod === 'flooz' ? 'Flooz' : 'TMoney' })}
+            <Button onClick={submitOrder} disabled={processing || !phone || otpSent} className="mt-4 w-full bg-[#111] text-white hover:bg-black">
+              {processing ? 'Processing...' : t.pay}
             </Button>
-          </form>
-
-          <p className="mt-4 text-center text-xs text-foreground/50 italic">{t('secureTransactions')}</p>
-        </main>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <motion.div className="w-full max-w-md text-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-        <CheckoutStepper
-          activeStep={activeStep}
-          labels={{ cart: t('yourCart'), payment: t('paymentDetails'), confirmation: t('orderConfirmed') }}
-        />
-        <div className="mb-6 flex justify-center"><div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20"><Check className="h-8 w-8 text-green-600" /></div></div>
-
-        <h1 className="mb-2 text-3xl font-bold text-foreground">
-          {paymentStatus === 'CONFIRMED' ? t('orderConfirmed') : t('paymentPendingTitle')}
-        </h1>
-        <p className="mb-6 text-foreground/60">
-          {paymentStatus === 'CONFIRMED' ? t('orderSuccess') : t('paymentPendingMessage')}
-        </p>
-
-        <div className="mb-8 space-y-4 rounded-lg border border-border bg-card p-4">
-          <div><p className="text-xs text-foreground/60">{t('orderTotal')}</p><p className="text-2xl font-bold text-primary">{formatPrice(total)}</p></div>
+          </aside>
         </div>
-
-        <div className="space-y-3">
-          <Link href="/dashboard" className="block"><Button className="w-full">{t('viewOrders')}</Button></Link>
-          <Link href="/browse" className="block"><Button variant="outline" className="w-full">{t('continueShopping')}</Button></Link>
-        </div>
-
-        <p className="mt-6 text-xs text-foreground/50">{t('orderEmailHint')}</p>
-      </motion.div>
+      </main>
+      <SiteFooter />
     </div>
   )
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background px-4">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <CheckoutContent />
     </Suspense>
   )
