@@ -218,6 +218,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                     <div className="relative group">
                       <Input 
                         name="phone" 
+                        type="tel"
                         value={formData.phone} 
                         onChange={handleChange}
                         placeholder="+228..."
@@ -232,7 +233,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">{t('password')}</label>
-                  {isLogin && <Link href="/forgot-password" className="text-[10px] text-primary hover:underline uppercase font-bold tracking-widest">Oublié ?</Link>}
+                  {isLogin && <Link href="/forgot-password" title={t('forgot')} className="text-[10px] text-primary hover:underline uppercase font-bold tracking-widest">{t('forgot')}</Link>}
                 </div>
                 <div className="relative group">
                   <Input 
@@ -277,7 +278,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                   <Sparkles className="h-5 w-5 animate-spin" />
                 ) : (
                   <>
-                    {isLogin ? t('submit') : t('submitSignup')}
+                    {t('submit')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
