@@ -226,7 +226,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-zinc-400">{t('password')}</label>
-                  {isLogin && <Link href="/forgot-password" size="sm" className="text-[10px] text-primary hover:underline uppercase font-bold tracking-widest">Oublié ?</Link>}
+                  {isLogin && <Link href="/forgot-password" className="text-[10px] text-primary hover:underline uppercase font-bold tracking-widest">Oublié ?</Link>}
                 </div>
                 <div className="relative group">
                   <Input 

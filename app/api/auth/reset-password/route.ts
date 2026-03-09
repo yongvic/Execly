@@ -1,16 +1,21 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { z } from 'zod'
+
+const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1).max(512),
+  password: z.string().min(6).max(256),
+})
 
 export async function POST(req: Request) {
   try {
-    const { token, password } = await req.json()
-
-    if (!token || !password) {
+    const body = await req.json()
+    const parsed = resetPasswordSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Token and password are required' }, { status: 400 })
     }
-
-    console.log('Attempting to reset password for token:', token.substring(0, 10) + '...')
+    const { token, password } = parsed.data
 
     // Reconnect if needed or use the existing client
     const user = await prisma.user.findFirst({
@@ -23,11 +28,9 @@ export async function POST(req: Request) {
     })
 
     if (!user) {
-      console.log('No user found or token expired for token:', token.substring(0, 10) + '...')
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 400 })
     }
 
-    console.log('User found:', user.email)
     const hashedPassword = await bcrypt.hash(password, 10)
 
     await prisma.user.update({
@@ -39,7 +42,6 @@ export async function POST(req: Request) {
       },
     })
 
-    console.log('Password updated successfully for:', user.email)
     return NextResponse.json({ message: 'Password reset successfully' })
   } catch (error) {
     console.error('Reset password error:', error)

@@ -10,7 +10,7 @@ import { z } from 'zod'
 const loginRateLimiter = new RateLimiter(5, 15 * 60 * 1000) // 5 attempts per 15 minutes
 const loginSchema = z.object({
   identifier: z.string().trim().min(1),
-  password: z.string().min(1),
+  password: z.string().min(1).max(256),
 })
 
 export async function POST(request: NextRequest) {
@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     const { identifier, password } = parsed.data
 
     const sanitizedIdentifier = sanitizeInput(identifier?.toLowerCase().trim())
-    const sanitizedPassword = sanitizeInput(password)
+    const rawPassword = password
 
-    if (!sanitizedIdentifier || !sanitizedPassword) {
+    if (!sanitizedIdentifier || !rawPassword) {
       return NextResponse.json(
         { error: 'Identifier and password are required' },
         { status: 400 }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const passwordMatch = await bcrypt.compare(sanitizedPassword, user.password)
+    const passwordMatch = await bcrypt.compare(rawPassword, user.password)
 
     if (!passwordMatch) {
       return NextResponse.json(

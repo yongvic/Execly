@@ -78,5 +78,15 @@ export function signWebhookPayload(payload: string, secret: string) {
 export function verifyWebhookSignature(payload: string, signature: string | null, secret: string) {
   if (!signature) return false
   const expected = signWebhookPayload(payload, secret)
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+
+  // timingSafeEqual throws if buffers differ in length.
+  if (signature.length !== expected.length) {
+    return false
+  }
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+  } catch {
+    return false
+  }
 }

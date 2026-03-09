@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
+
+const newsletterSchema = z.object({
+  email: z.string().trim().email().max(254),
+})
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json()
-
-    if (!email || !email.includes('@')) {
+    const body = await req.json()
+    const parsed = newsletterSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
         { message: 'Veuillez fournir un email valide.' },
         { status: 400 }
       )
     }
+    const normalizedEmail = parsed.data.email.toLowerCase()
 
     // Check if already exists
     const existing = await prisma.newsletterSubscriber.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     })
 
     if (existing) {
@@ -26,14 +32,14 @@ export async function POST(req: Request) {
       } else {
         // Re-activate
         await prisma.newsletterSubscriber.update({
-          where: { email },
+          where: { email: normalizedEmail },
           data: { active: true },
         })
       }
     } else {
       // Create new
       await prisma.newsletterSubscriber.create({
-        data: { email },
+        data: { email: normalizedEmail },
       })
     }
 
