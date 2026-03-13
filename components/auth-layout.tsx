@@ -48,7 +48,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
       </div>
 
       <div className="relative w-full max-w-6xl grid lg:grid-cols-2 bg-white rounded-[2.5rem] border border-zinc-200 shadow-2xl overflow-hidden min-h-[700px]">
-        
+
         {/* LEFT SIDE: Visual & Info */}
         <div className={`relative hidden lg:flex flex-col justify-between p-12 overflow-hidden transition-all duration-700 ease-in-out bg-slate-50 ${isLogin ? 'order-1 border-r border-zinc-100' : 'order-2 border-l border-zinc-100'}`}>
           {/* Animated Image Background */}
@@ -56,8 +56,8 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
             <AnimatePresence mode="wait">
               <motion.img
                 key={mode}
-                src={isLogin 
-                  ? "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&q=80" 
+                src={isLogin
+                  ? "https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&q=80"
                   : "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&q=80"
                 }
                 initial={{ opacity: 0, scale: 1.1 }}
@@ -71,8 +71,8 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
 
           <div className="relative z-10">
             <Link href="/" className="flex items-center gap-2 font-bold text-2xl tracking-tighter mb-12 group text-primary">
-               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white group-hover:rotate-12 transition-transform">E</div>
-               <span>Execly.</span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white group-hover:rotate-12 transition-transform">E</div>
+              <span>Execly.</span>
             </Link>
 
             <motion.div
@@ -83,8 +83,8 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
               className="max-w-md"
             >
               <h2 className="text-4xl font-bold leading-tight mb-6 text-zinc-800">
-                {isLogin 
-                  ? "Propulsez vos projets avec une qualité Studio." 
+                {isLogin
+                  ? "Propulsez vos projets avec une qualité Studio."
                   : "Rejoignez la nouvelle ère du service digital."
                 }
               </h2>
@@ -142,16 +142,16 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                 {isLogin ? t('title') : t('signupTitle')}
               </h1>
               <p className="text-zinc-500 text-sm">
-                {isLogin 
-                  ? "Content de vous revoir ! Connectez-vous à votre espace." 
+                {isLogin
+                  ? "Content de vous revoir ! Connectez-vous à votre espace."
                   : "Commencez dès aujourd'hui et donnez vie à vos idées."
                 }
               </p>
             </motion.div>
 
             {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }} 
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="mb-6 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-medium"
               >
@@ -171,12 +171,15 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                   >
                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1">{t('fullName')}</label>
                     <div className="relative group">
-                      <Input 
-                        name="name" 
-                        value={formData.name} 
+                      <Input
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        required
+                        value={formData.name}
                         onChange={handleChange}
                         placeholder="John Doe"
-                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                       />
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                     </div>
@@ -188,12 +191,15 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1">{t('emailOrPhone')}</label>
                   <div className="relative group">
-                    <Input 
-                      name="identifier" 
-                      value={formData.identifier} 
+                    <Input
+                      name="identifier"
+                      type="text"
+                      autoComplete="username"
+                      required
+                      value={formData.identifier}
                       onChange={handleChange}
                       placeholder="Email ou téléphone"
-                      className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                      className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                     />
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                   </div>
@@ -203,12 +209,14 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1">{t('email')}</label>
                     <div className="relative group">
-                      <Input 
-                        name="email" 
-                        value={formData.email} 
+                      <Input
+                        name="email"
+                        type="email"
+                        autoComplete="email"
+                        value={formData.email}
                         onChange={handleChange}
                         placeholder="john@example.com"
-                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                       />
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                     </div>
@@ -216,13 +224,14 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1">{t('phone')}</label>
                     <div className="relative group">
-                      <Input 
-                        name="phone" 
+                      <Input
+                        name="phone"
                         type="tel"
-                        value={formData.phone} 
+                        autoComplete="tel"
+                        value={formData.phone}
                         onChange={handleChange}
                         placeholder="+228..."
-                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                        className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                       />
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                     </div>
@@ -236,13 +245,15 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                   {isLogin && <Link href="/forgot-password" title={t('forgot')} className="text-[10px] text-primary hover:underline uppercase font-bold tracking-widest">{t('forgot')}</Link>}
                 </div>
                 <div className="relative group">
-                  <Input 
-                    name="password" 
-                    type="password" 
-                    value={formData.password} 
+                  <Input
+                    name="password"
+                    type="password"
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    required
+                    value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                    className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                   />
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                 </div>
@@ -256,22 +267,24 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
                 >
                   <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 ml-1">{t('confirmPassword')}</label>
                   <div className="relative group">
-                    <Input 
-                      name="confirmPassword" 
-                      type="password" 
-                      value={formData.confirmPassword} 
+                    <Input
+                      name="confirmPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      required
+                      value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all" 
+                      className="h-12 bg-zinc-50 border-zinc-200 rounded-xl pl-11 focus:bg-white focus:border-primary/50 text-zinc-900 transition-all"
                     />
                     <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 group-focus-within:text-primary transition-colors" />
                   </div>
                 </motion.div>
               )}
 
-              <Button 
-                type="submit" 
-                disabled={loading} 
+              <Button
+                type="submit"
+                disabled={loading}
                 className="h-12 w-full bg-primary text-white hover:bg-primary/90 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 mt-4"
               >
                 {loading ? (
@@ -288,7 +301,7 @@ export function AuthLayout({ initialMode, t, onSubmit, loading, error }: AuthLay
             <div className="mt-8 text-center">
               <p className="text-sm text-zinc-500">
                 {isLogin ? t('noAccount') : t('haveAccount')}{' '}
-                <button 
+                <button
                   onClick={() => setMode(isLogin ? 'signup' : 'login')}
                   className="text-primary font-bold hover:underline underline-offset-4"
                 >

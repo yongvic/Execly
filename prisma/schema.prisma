@@ -18,8 +18,9 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   role      Role       @default(USER)
-  resetToken        String?   @unique
-  resetTokenExpires DateTime?
+  resetToken          String?   @unique
+  resetTokenExpires   DateTime?
+  passwordChangedAt   DateTime?
   cart      CartItem[]
   favorites Favorite[]
   orders    Order[]

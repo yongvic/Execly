@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const data = await res.json()
     setUser(data.user)
-    
+
     // Redirect to browse page after successful login
     if (typeof window !== 'undefined') {
       window.location.href = '/browse'
@@ -73,6 +73,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
     setUser(null)
+    // Redirect to home to prevent displaying protected content
+    if (typeof window !== 'undefined') {
+      window.location.href = '/'
+    }
   }
 
   const register = async (payload: { email?: string; phone?: string; password: string; name: string }) => {
@@ -88,7 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Auto login after registration
-    const identifier = payload.email || payload.phone || ''
+    // Normalize the phone number the same way the API does, to avoid login failure
+    const identifier = payload.email || payload.phone?.replace(/\s+/g, '') || ''
     await login(identifier, payload.password)
   }
 

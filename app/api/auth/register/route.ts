@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { isValidEmail } from '@/lib/security'
+import { isValidEmail, validatePassword } from '@/lib/security'
 
 const registerSchema = z.object({
-  name: z.string().trim().min(2),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters'),
   email: z.string().trim().optional(),
   phone: z.string().trim().optional(),
-  password: z.string().min(6),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(256),
   country: z.string().trim().optional(),
 })
 
@@ -17,11 +17,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = registerSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid registration data' }, { status: 400 })
+      const firstError = parsed.error.errors[0]?.message || 'Invalid registration data'
+      return NextResponse.json({ error: firstError }, { status: 400 })
     }
 
     const { email, password, name, phone, country } = parsed.data
-    const normalizedEmail = email?.toLowerCase()
+    const normalizedEmail = email?.toLowerCase().trim()
     const normalizedPhone = phone?.replace(/\s+/g, '')
 
     if (!normalizedEmail && !normalizedPhone) {
@@ -39,6 +40,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid phone number' }, { status: 400 })
     }
 
+    // Validate password strength
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.isValid) {
+      return NextResponse.json({ error: passwordValidation.errors[0] }, { status: 400 })
+    }
+
     if (normalizedEmail) {
       const existingUserByEmail = await prisma.user.findUnique({ where: { email: normalizedEmail } })
       if (existingUserByEmail) {
@@ -53,7 +60,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     const user = await prisma.user.create({
       data: {
